@@ -1,10 +1,9 @@
 {
-  "usePlugin": "",
   "LOG": true,
   "OPENAI_API_KEY": "",
   "OPENAI_BASE_URL": "",
   "OPENAI_MODEL": "",
-  "providers": [
+  "Providers": [
     {
       "name": "zuke-claude",
       "api_base_url": "https://zuke.chat/v1/chat/completions",
@@ -19,8 +18,7 @@
       "transformer": {
         "use": ["newapi"]
       }
-    },
-    {
+    },{
       "name": "zuke-gemini",
       "api_base_url": "https://zuke.chat/v1/chat/completions",
       "api_key": "sk-g7KHmMzv0BKglb9pvPOnAlQKmkMiCi9hjcSFlRTjCSlnP4U0",
@@ -36,5 +34,13 @@
       }
     }
   ],
-  "modelProviders": {}
-}
+  "Router": {
+    "default": "zuke-claude,claude-sonnet-4-20250514",
+    "background": "zuke-gemini,gemini-2.5-pro-preview-06-05",
+    "think": [
+      "zuke-claude,claude-sonnet-4-20250514-thinking",
+      "zuke-gemini,gemini-2.5-pro-preview-03-25-thinking"
+    ],
+    "longContext": "zuke-gemini,gemini-2.5-pro-preview-06-05"
+  }
+} 

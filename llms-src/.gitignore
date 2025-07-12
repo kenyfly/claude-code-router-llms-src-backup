@@ -1,0 +1,11 @@
+pnpm-lock.yaml
+dist
+.env.example
+node_modules
+.DS_Store
+.vscode
+*.log
+.env
+config.json
+.idea
+.cursor
