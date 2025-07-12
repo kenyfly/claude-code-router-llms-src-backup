@@ -5,9 +5,24 @@ import { log } from "../utils/log";
 import { NewAPIToolCleaner } from "../utils/tool-cleaner";
 
 // 版本号常量定义
-const NEWAPI_VERSION = "v17.0"; // 🎯 完美融合版本：v8.0的稳定性 + v16.0的think标签
+const NEWAPI_VERSION = "v18.0"; // 🎯 安全渐进版本：A/B测试 + 完善日志 + 回滚机制
 
-// 日志标志系统 - 结构化标识符
+// 🔧 安全开关配置
+const SAFE_CONFIG = {
+  // A/B测试开关
+  ENABLE_SIGNATURE_FIX: process.env.NEWAPI_ENABLE_SIGNATURE !== 'false', // 默认开启，除非明确设置为false
+  ENABLE_INDEX_FIX: process.env.NEWAPI_ENABLE_INDEX === 'true',         // 默认关闭
+  
+  // 安全阈值
+  MAX_REASONING_LENGTH: 50000,    // 推理内容最大长度
+  MAX_CHUNKS_PER_REQUEST: 1000,   // 每请求最大chunk数
+  
+  // 调试模式
+  DEBUG_MODE: process.env.NEWAPI_DEBUG === 'true',
+  LOG_RAW_DATA: process.env.NEWAPI_LOG_RAW === 'true'
+};
+
+// 🔍 增强日志系统 - 结构化标识符
 const LOG_PREFIX = `[NewAPI-${NEWAPI_VERSION}]`;
 const LOG_MARKERS = {
   // 主要流程标志
@@ -48,22 +63,45 @@ const LOG_MARKERS = {
   RESPONSE_IN: `${LOG_PREFIX} 📨 [RESPONSE-IN]`,
   RESPONSE_OUT: `${LOG_PREFIX} 📤 [RESPONSE-OUT]`,
   STREAM_PROCESSING: `${LOG_PREFIX} 🌊 [STREAM]`,
-  REASONING_CONVERT: `${LOG_PREFIX} 🧠 [REASONING-CONVERT]`
+  REASONING_CONVERT: `${LOG_PREFIX} 🧠 [REASONING-CONVERT]`,
+  
+  // 🆕 安全检查标志
+  SAFETY_CHECK: `${LOG_PREFIX} 🛡️ [SAFETY]`,
+  AB_TEST: `${LOG_PREFIX} 🧪 [A/B-TEST]`,
+  ROLLBACK: `${LOG_PREFIX} 🔄 [ROLLBACK]`,
+  DATA_FLOW: `${LOG_PREFIX} 📊 [DATA-FLOW]`,
+  
+  // 🆕 完成信号相关
+  COMPLETION_DETECT: `${LOG_PREFIX} 🎯 [COMPLETION-DETECT]`,
+  SIGNATURE_GEN: `${LOG_PREFIX} 🔐 [SIGNATURE]`,
+  INDEX_HANDLE: `${LOG_PREFIX} 📍 [INDEX]`,
+  
+  // 🆕 内容追踪标志
+  CONTENT_TRACK: `${LOG_PREFIX} 📝 [CONTENT-TRACK]`,
+  THINKING_TRACK: `${LOG_PREFIX} 🧠 [THINKING-TRACK]`,
+  TEXT_TRACK: `${LOG_PREFIX} 📄 [TEXT-TRACK]`
 };
 
 /**
- * NewAPI Transformer - 完美融合版本v17.0
+ * NewAPI Transformer - 安全渐进版本v18.0
  * 
- * 结合v8.0的稳定性和v16.0的think标签功能：
- * 1. 保留v8.0的完整请求处理逻辑（确保正文内容正常）
- * 2. 添加v16.0的响应处理逻辑（确保think标签显示）
- * 3. 修复响应处理中的内容丢失问题
+ * 🛡️ 安全特性：
+ * 1. A/B测试开关：通过环境变量控制新功能
+ * 2. 完整数据流追踪：详细记录每个步骤
+ * 3. 安全检查：防止历史问题重现
+ * 4. 回滚机制：出问题时快速恢复
  * 
- * 核心原则：两全其美 - 既有正文内容，又有think标签
+ * 🎯 核心原则：安全第一，渐进改进
  */
 export class NewAPITransformer implements Transformer {
   name = "newapi";
-  version = `${NEWAPI_VERSION} - 完美融合：v8.0稳定性 + v16.0 think标签`; // 🎯 版本标识
+  version = `${NEWAPI_VERSION} - 安全渐进：A/B测试 + 完善日志 + 回滚机制`; // 🎯 版本标识
+
+  // 🔍 数据流追踪器
+  private chunkCounter = 0;
+  private reasoningAccumulator = "";
+  private isReasoningCompleted = false;
+  private hasTextContent = false;
   
   /**
    * 处理发送给NewAPI的请求（继承v8.0的完整逻辑）
@@ -120,20 +158,43 @@ export class NewAPITransformer implements Transformer {
   }
 
   /**
-   * 处理从NewAPI返回的响应（新增：添加think标签支持）
+   * 处理从NewAPI返回的响应（安全增强版）
    */
   async transformResponseOut(response: Response): Promise<Response> {
     log(`${LOG_MARKERS.RESPONSE_IN} 开始处理响应转换`);
+    log(`${LOG_MARKERS.AB_TEST} A/B测试状态 - SIGNATURE_FIX: ${SAFE_CONFIG.ENABLE_SIGNATURE_FIX}, INDEX_FIX: ${SAFE_CONFIG.ENABLE_INDEX_FIX}`);
     
     if (response.headers.get("Content-Type")?.includes("text/event-stream")) {
       log(`${LOG_MARKERS.STREAM_PROCESSING} 处理流式响应`);
       
       if (!response.body) {
+        log(`${LOG_MARKERS.WARNING} 响应体为空，直接返回`);
         return response;
       }
 
       const decoder = new TextDecoder();
       const encoder = new TextEncoder();
+
+      // 🔍 重置数据流追踪器
+      this.resetTracker();
+
+      // 保存this上下文的方法引用
+      const safetyCheck = this.safetyCheck.bind(this);
+      const trackDataFlow = this.trackDataFlow.bind(this);
+      const processReasoningContent = this.processReasoningContent.bind(this);
+      const detectCompletion = this.detectCompletion.bind(this);
+      const handleCompletion = this.handleCompletion.bind(this);
+      const shouldAdjustIndex = this.shouldAdjustIndex.bind(this);
+      const adjustIndex = this.adjustIndex.bind(this);
+      const handleRollback = this.handleRollback.bind(this);
+      const safeCleanup = this.safeCleanup.bind(this);
+      const handleStreamError = this.handleStreamError.bind(this);
+
+      // 保存追踪器的引用
+      let chunkCounter = 0;
+      let reasoningAccumulator = "";
+      let isReasoningCompleted = false;
+      let hasTextContent = false;
 
       const stream = new ReadableStream({
         async start(controller) {
@@ -142,7 +203,10 @@ export class NewAPITransformer implements Transformer {
           try {
             while (true) {
               const { done, value } = await reader.read();
-              if (done) break;
+              if (done) {
+                log(`${LOG_MARKERS.DATA_FLOW} 流式响应完成 - 总chunks: ${chunkCounter}, reasoning: ${reasoningAccumulator.length > 0 ? 'Yes' : 'No'}, text: ${hasTextContent ? 'Yes' : 'No'}`);
+                break;
+              }
 
               const chunk = decoder.decode(value, { stream: true });
               const lines = chunk.split("\n");
@@ -151,37 +215,110 @@ export class NewAPITransformer implements Transformer {
                 if (line.startsWith("data: ") && line.trim() !== "data: [DONE]") {
                   try {
                     const data = JSON.parse(line.slice(6));
+                    chunkCounter++;
 
-                    // 🧠 关键：reasoning_content到thinking的转换
-                    if (data.choices?.[0]?.delta?.reasoning_content) {
-                      log(`${LOG_MARKERS.REASONING_CONVERT} 检测到reasoning_content，转换为thinking字段`);
-                      
-                      // 创建thinking格式的数据，但不删除原始数据
-                      const thinkingData = {
-                        ...data,
-                        choices: [
-                          {
-                            ...data.choices[0],
-                            delta: {
-                              ...data.choices[0].delta,
-                              thinking: {
-                                content: data.choices[0].delta.reasoning_content,
-                              },
-                            },
-                          },
-                        ],
-                      };
-                      
-                      // 🔧 关键修复：保留reasoning_content，让后续处理
-                      const modifiedLine = `data: ${JSON.stringify(thinkingData)}\n\n`;
-                      controller.enqueue(encoder.encode(modifiedLine));
-                    } else {
-                      // 🔧 关键修复：其他数据必须完整透传，确保正文内容不丢失
-                      const originalLine = `data: ${JSON.stringify(data)}\n\n`;
-                      controller.enqueue(encoder.encode(originalLine));
+                    // 🛡️ 安全检查
+                    if (!safetyCheck(data)) {
+                      log(`${LOG_MARKERS.ROLLBACK} 安全检查失败，使用回滚逻辑`);
+                      handleRollback(controller, encoder, data);
+                      continue;
                     }
+
+                    // 🔍 数据流追踪 - 内联实现
+                    const choice = data.choices?.[0];
+                    if (choice?.delta) {
+                      const delta = choice.delta;
+                      
+                      // 追踪推理内容
+                      if (delta.reasoning_content) {
+                        reasoningAccumulator += delta.reasoning_content;
+                        log(`${LOG_MARKERS.THINKING_TRACK} 推理内容累积 - 当前长度: ${reasoningAccumulator.length}, 新增: ${delta.reasoning_content.length}`);
+                      }
+
+                      // 追踪正文内容
+                      if (delta.content && !hasTextContent) {
+                        hasTextContent = true;
+                        log(`${LOG_MARKERS.TEXT_TRACK} 检测到正文内容开始 - index: ${choice.index}, content: "${delta.content.substring(0, 20)}..."`);
+                      }
+
+                      // 原始数据日志（调试模式）
+                      if (SAFE_CONFIG.LOG_RAW_DATA) {
+                        log(`${LOG_MARKERS.DEBUG_DETAIL} 原始数据[${chunkCounter}]: ${JSON.stringify(data).substring(0, 200)}...`);
+                      }
+                    }
+
+                    // 🧠 关键：reasoning_content处理 - 直接修改原数据
+                    if (data.choices?.[0]?.delta?.reasoning_content) {
+                      const reasoningContent = data.choices[0].delta.reasoning_content;
+                      log(`${LOG_MARKERS.REASONING_CONVERT} 检测到reasoning_content - 长度: ${reasoningContent.length}`);
+                      
+                      // 直接在原数据上添加thinking字段，保持流式特性
+                      data.choices[0].delta.thinking = {
+                        content: reasoningContent,
+                      };
+                      log(`${LOG_MARKERS.SAFETY_CHECK} 安全策略：reasoning内容已转换为thinking格式`);
+                    }
+
+                    // 🎯 完成信号检测（A/B测试）
+                    if (SAFE_CONFIG.ENABLE_SIGNATURE_FIX) {
+                      const delta = data.choices?.[0]?.delta;
+                      if (delta) {
+                        // 内联完成检测
+                        const hasContent = Boolean(delta.content);
+                        const hasAccumulatedReasoning = reasoningAccumulator.length > 0;
+                        const reasoningNotComplete = !isReasoningCompleted;
+                        
+                        if (hasContent && hasAccumulatedReasoning && reasoningNotComplete) {
+                          log(`${LOG_MARKERS.COMPLETION_DETECT} 检测到完成条件 - content: ${Boolean(delta.content)}, reasoning: ${reasoningAccumulator.length}chars, completed: ${isReasoningCompleted}`);
+                          
+                          // 内联完成处理
+                          isReasoningCompleted = true;
+                          const signature = Date.now().toString();
+
+                          const completionData = {
+                            ...data,
+                            choices: [
+                              {
+                                ...data.choices[0],
+                                delta: {
+                                  thinking: {
+                                    content: reasoningAccumulator,
+                                    signature: signature,
+                                  },
+                                },
+                              },
+                            ],
+                          };
+
+                          log(`${LOG_MARKERS.SIGNATURE_GEN} 生成完成信号 - signature: ${signature}, reasoning长度: ${reasoningAccumulator.length}`);
+                          const completionLine = `data: ${JSON.stringify(completionData)}\n\n`;
+                          controller.enqueue(encoder.encode(completionLine));
+                        }
+                      }
+                    }
+
+                    // 📍 Index处理（A/B测试）
+                    if (SAFE_CONFIG.ENABLE_INDEX_FIX && isReasoningCompleted && data.choices?.[0]?.delta?.content) {
+                      if (data.choices?.[0]) {
+                        const originalIndex = data.choices[0].index;
+                        data.choices[0].index++;
+                        log(`${LOG_MARKERS.INDEX_HANDLE} Index调整 - ${originalIndex} → ${data.choices[0].index}`);
+                      }
+                    }
+
+                    // 🔧 最终数据发送
+                    const finalLine = `data: ${JSON.stringify(data)}\n\n`;
+                    controller.enqueue(encoder.encode(finalLine));
+                    
+                    // 🔍 流式调试：记录每个chunk的内容
+                    const content = data.choices?.[0]?.delta?.content || data.choices?.[0]?.delta?.thinking?.content;
+                    if (content) {
+                      log(`${LOG_MARKERS.DEBUG_DETAIL} 流式输出[${chunkCounter}]: "${content.substring(0, 50)}..." (长度: ${content.length})`);
+                    }
+
                   } catch (e: any) {
-                    // JSON解析失败，透传原始行
+                    log(`${LOG_MARKERS.ERROR} JSON解析失败: ${e.message}`);
+                    // 🛡️ 安全回滚：透传原始行
                     controller.enqueue(encoder.encode(line + "\n"));
                   }
                 } else {
@@ -192,14 +329,10 @@ export class NewAPITransformer implements Transformer {
             }
           } catch (error: any) {
             log(`${LOG_MARKERS.ERROR} 流式响应处理错误: ${error.message}`);
-            controller.error(error);
+            log(`${LOG_MARKERS.ROLLBACK} 激活错误回滚机制`);
+            handleStreamError(controller, error);
           } finally {
-            try {
-              reader.releaseLock();
-            } catch (e: any) {
-              log(`${LOG_MARKERS.WARNING} 释放reader锁失败: ${e.message}`);
-            }
-            controller.close();
+            safeCleanup(reader, controller);
           }
         },
       });
@@ -414,6 +547,181 @@ export class NewAPITransformer implements Transformer {
     log(`${LOG_MARKERS.MODEL_DETECT}   - 是Claude4模型: ${isClaude4ThinkingModel}`);
     log(`${LOG_MARKERS.MODEL_DETECT}   - 最终判断: ${isThinking ? '支持thinking模式' : '不支持thinking模式'}`);
     return isThinking;
+  }
+
+  // 🔍 重置数据流追踪器
+  private resetTracker(): void {
+    this.chunkCounter = 0;
+    this.reasoningAccumulator = "";
+    this.isReasoningCompleted = false;
+    this.hasTextContent = false;
+    log(`${LOG_MARKERS.DATA_FLOW} 数据流追踪器已重置`);
+  }
+
+  // 🛡️ 安全检查
+  private safetyCheck(data: any): boolean {
+    // 检查chunk计数器
+    if (this.chunkCounter > SAFE_CONFIG.MAX_CHUNKS_PER_REQUEST) {
+      log(`${LOG_MARKERS.SAFETY_CHECK} 安全检查失败：chunk数量超限 (${this.chunkCounter})`);
+      return false;
+    }
+
+    // 检查推理内容长度
+    if (data.choices?.[0]?.delta?.reasoning_content) {
+      if (this.reasoningAccumulator.length + data.choices[0].delta.reasoning_content.length > SAFE_CONFIG.MAX_REASONING_LENGTH) {
+        log(`${LOG_MARKERS.SAFETY_CHECK} 安全检查失败：推理内容过长`);
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // 🔍 数据流追踪
+  private trackDataFlow(data: any): void {
+    const choice = data.choices?.[0];
+    if (!choice) return;
+
+    const delta = choice.delta;
+    if (!delta) return;
+
+    // 追踪推理内容
+    if (delta.reasoning_content) {
+      this.reasoningAccumulator += delta.reasoning_content;
+      log(`${LOG_MARKERS.THINKING_TRACK} 推理内容累积 - 当前长度: ${this.reasoningAccumulator.length}, 新增: ${delta.reasoning_content.length}`);
+    }
+
+    // 追踪正文内容
+    if (delta.content) {
+      if (!this.hasTextContent) {
+        this.hasTextContent = true;
+        log(`${LOG_MARKERS.TEXT_TRACK} 检测到正文内容开始 - index: ${choice.index}, content: "${delta.content.substring(0, 20)}..."`);
+      }
+    }
+
+    // 原始数据日志（调试模式）
+    if (SAFE_CONFIG.LOG_RAW_DATA) {
+      log(`${LOG_MARKERS.DEBUG_DETAIL} 原始数据[${this.chunkCounter}]: ${JSON.stringify(data).substring(0, 200)}...`);
+    }
+  }
+
+  // 🧠 处理推理内容
+  private processReasoningContent(data: any): any {
+    const reasoningContent = data.choices[0].delta.reasoning_content;
+    
+    // 创建thinking格式的数据
+    const thinkingData = {
+      ...data,
+      choices: [
+        {
+          ...data.choices[0],
+          delta: {
+            ...data.choices[0].delta,
+            thinking: {
+              content: reasoningContent,
+            },
+          },
+        },
+      ],
+    };
+    
+    // 🔧 关键修复：保留reasoning_content，让后续处理
+    log(`${LOG_MARKERS.REASONING_CONVERT} 推理内容转换完成 - 保留原始数据`);
+    return thinkingData;
+  }
+
+  // 🎯 检测完成信号
+  private detectCompletion(data: any): boolean {
+    const delta = data.choices?.[0]?.delta;
+    if (!delta) return false;
+
+    // 检测模式：有正文内容 && 有积累的推理内容 && 推理未完成
+    const hasContent = Boolean(delta.content);
+    const hasAccumulatedReasoning = this.reasoningAccumulator.length > 0;
+    const reasoningNotComplete = !this.isReasoningCompleted;
+
+    const shouldComplete = hasContent && hasAccumulatedReasoning && reasoningNotComplete;
+    
+    if (shouldComplete) {
+      log(`${LOG_MARKERS.COMPLETION_DETECT} 检测到完成条件 - content: ${Boolean(delta.content)}, reasoning: ${this.reasoningAccumulator.length}chars, completed: ${this.isReasoningCompleted}`);
+    }
+
+    return shouldComplete;
+  }
+
+  // 🔐 处理完成信号
+  private handleCompletion(data: any): { data: any, signature: string } | null {
+    if (this.isReasoningCompleted) return null;
+
+    this.isReasoningCompleted = true;
+    const signature = Date.now().toString();
+
+    const completionData = {
+      ...data,
+      choices: [
+        {
+          ...data.choices[0],
+          delta: {
+            ...data.choices[0].delta,
+            content: null, // 清空content避免重复
+            thinking: {
+              content: this.reasoningAccumulator,
+              signature: signature,
+            },
+          },
+        },
+      ],
+    };
+
+    log(`${LOG_MARKERS.SIGNATURE_GEN} 生成完成信号 - signature: ${signature}, reasoning长度: ${this.reasoningAccumulator.length}`);
+    return { data: completionData, signature };
+  }
+
+  // 📍 判断是否需要调整index
+  private shouldAdjustIndex(data: any): boolean {
+    return this.isReasoningCompleted && data.choices?.[0]?.delta?.content;
+  }
+
+  // 📍 调整index
+  private adjustIndex(data: any): void {
+    if (data.choices?.[0]) {
+      const originalIndex = data.choices[0].index;
+      data.choices[0].index++;
+      log(`${LOG_MARKERS.INDEX_HANDLE} Index调整 - ${originalIndex} → ${data.choices[0].index}`);
+    }
+  }
+
+  // 🔄 回滚处理
+  private handleRollback(controller: any, encoder: TextEncoder, data: any): void {
+    log(`${LOG_MARKERS.ROLLBACK} 执行回滚策略：透传原始数据`);
+    const fallbackLine = `data: ${JSON.stringify(data)}\n\n`;
+    controller.enqueue(encoder.encode(fallbackLine));
+  }
+
+  // 🛡️ 安全清理
+  private safeCleanup(reader: any, controller: any): void {
+    try {
+      reader.releaseLock();
+      log(`${LOG_MARKERS.SAFETY_CHECK} reader锁释放成功`);
+    } catch (e: any) {
+      log(`${LOG_MARKERS.WARNING} reader锁释放失败: ${e.message}`);
+    }
+    
+    try {
+      controller.close();
+      log(`${LOG_MARKERS.SAFETY_CHECK} controller关闭成功`);
+    } catch (e: any) {
+      log(`${LOG_MARKERS.WARNING} controller关闭失败: ${e.message}`);
+    }
+  }
+
+  // 🚨 错误处理
+  private handleStreamError(controller: any, error: any): void {
+    try {
+      controller.error(error);
+    } catch (e: any) {
+      log(`${LOG_MARKERS.ERROR} controller.error失败: ${e.message}`);
+    }
   }
 
   /**
