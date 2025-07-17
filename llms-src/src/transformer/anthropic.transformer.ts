@@ -16,7 +16,11 @@ export class AnthropicTransformer implements Transformer {
       if (typeof request.system === "string") {
         messages.push({
           role: "system",
-          content: request.system,
+          content: [{
+            type: "text",
+            text: request.system,
+            cache_control: { type: "ephemeral" }
+          }],
         });
       } else if (Array.isArray(request.system)) {
         const textParts = request.system
@@ -24,7 +28,7 @@ export class AnthropicTransformer implements Transformer {
           .map((item: any) => ({
             type: "text" as const,
             text: item.text,
-            cache_control: item.cache_control
+            cache_control: { type: "ephemeral" }
           }));
         messages.push({
           role: 'system',
@@ -37,14 +41,14 @@ export class AnthropicTransformer implements Transformer {
 
     requestMessages?.forEach((msg: any, index: number) => {
       if (msg.role === "user" || msg.role === "assistant") {
-        const unifiedMsg: UnifiedMessage = {
-          role: msg.role,
-          content: null,
-        };
         if (typeof msg.content === "string") {
           messages.push({
             role: msg.role,
-            content: msg.content,
+            content: [{
+              type: "text",
+              text: msg.content,
+              cache_control: { type: "ephemeral" }
+            }],
           });
         } else if (Array.isArray(msg.content)) {
           if (msg.role === "user") {
@@ -68,7 +72,11 @@ export class AnthropicTransformer implements Transformer {
 
             const textParts = msg.content.filter(
               (c: any) => c.type === "text" && c.text
-            );
+            ).map((c: any) => ({
+              type: "text",
+              text: c.text,
+              cache_control: { type: "ephemeral" }
+            }));
             if (textParts.length) {
               messages.push({
                 role: "user",
@@ -78,7 +86,11 @@ export class AnthropicTransformer implements Transformer {
           } else if (msg.role === "assistant") {
             const textParts = msg.content.filter(
               (c: any) => c.type === "text" && c.text
-            );
+            ).map((c: any) => ({
+              type: "text",
+              text: c.text,
+              cache_control: { type: "ephemeral" }
+            }));
             if (textParts.length) {
               messages.push(
                 ...textParts.map((text: any) => ({

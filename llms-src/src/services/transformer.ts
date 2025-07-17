@@ -9,6 +9,7 @@ import {
   OpenrouterTransformer,
   OpenAITransformer,
   NewAPITransformer,
+  GeminiNativeTransformer,
 } from "@/transformer";
 
 interface TransformerConfig {
@@ -124,6 +125,8 @@ export class TransformerService {
       const openrouter = new OpenrouterTransformer();
       const openai = new OpenAITransformer();
       const newapi = new NewAPITransformer();
+      const geminiNative = new GeminiNativeTransformer();
+
       this.registerTransformer(anthropic.name, anthropic);
       this.registerTransformer(gemini.name, gemini);
       this.registerTransformer(deepseek.name, deepseek);
@@ -131,6 +134,7 @@ export class TransformerService {
       this.registerTransformer(openrouter.name, openrouter);
       this.registerTransformer(openai.name, openai);
       this.registerTransformer(newapi.name, newapi);
+      this.registerTransformer(geminiNative.name, geminiNative);
     } catch (error) {
       log("transformer regist error:", error);
     }
