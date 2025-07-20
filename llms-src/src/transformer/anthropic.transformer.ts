@@ -8,7 +8,13 @@ export class AnthropicTransformer implements Transformer {
   endPoint = "/v1/messages";
 
   transformRequestOut(request: Record<string, any>): UnifiedChatRequest {
-    log(`Anthropic Request: ${request.model}, messages=${request.messages?.length || 0}`);
+    log(`🚀 [MODEL_ROUTING] Anthropic Request - Model: ${request.model}, Messages: ${request.messages?.length || 0}`);
+    // 检查是否是背景模型
+    if (request.model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+      log(`✅ [BACKGROUND_MODEL] 检测到背景模型: ${request.model}`);
+    } else {
+      log(`🟡 [OTHER_MODEL] 其他模型: ${request.model}`);
+    }
 
     const messages: UnifiedMessage[] = [];
 
@@ -59,6 +65,7 @@ export class AnthropicTransformer implements Transformer {
               toolParts.forEach((tool: any, toolIndex: number) => {
                 const toolMessage: UnifiedMessage = {
                   role: "tool",
+                  name: tool.name || tool.tool_use_id || "unknown",
                   content:
                     typeof tool.content === "string"
                       ? tool.content
@@ -143,6 +150,10 @@ export class AnthropicTransformer implements Transformer {
     const isStream = response.headers
       .get("Content-Type")
       ?.includes("text/event-stream");
+    
+    log(`📡 [RESPONSE_TYPE] 响应类型: ${isStream ? '流式' : '非流式'}`);
+    log(`📡 [RESPONSE_HEADERS] 响应头: Content-Type=${response.headers.get('Content-Type')}`);
+    
     if (isStream) {
       if (!response.body) {
         throw new Error("Stream response body is null");
@@ -160,6 +171,7 @@ export class AnthropicTransformer implements Transformer {
     } else {
       const data = await response.json();
       const anthropicResponse = this.convertOpenAIResponseToAnthropic(data);
+      
       return new Response(JSON.stringify(anthropicResponse), {
         headers: { "Content-Type": "application/json" },
       });
@@ -175,6 +187,24 @@ export class AnthropicTransformer implements Transformer {
         parameters: tool.input_schema,
       },
     }));
+  }
+
+    private parseSseMessage(messageString: string): { data: string } | null {
+    const lines = messageString.split('\n');  // 修复：使用正确的换行符
+    const dataLines: string[] = [];
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        dataLines.push(line.substring(6));
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.substring(5));
+      }
+    }
+
+    if (dataLines.length === 0) {
+      return null;
+    }
+
+    return { data: dataLines.join('\n') };  // 修复：使用正确的换行符
   }
 
   private async convertOpenAIStreamToAnthropic(
@@ -200,9 +230,12 @@ export class AnthropicTransformer implements Transformer {
         const safeEnqueue = (data: Uint8Array) => {
           if (!isClosed) {
             try {
-              controller.enqueue(data);
               const dataStr = new TextDecoder().decode(data);
-              log("send data:", dataStr.trim());
+              // 为了避免刷屏，我们只打印包含 "thinking" 的事件
+              if (dataStr.includes("thinking")) {
+                log.info(`📬 [ANTHROPIC_SSE_EVENT] 发送给客户端的思考事件:`, dataStr.trim());
+              }
+              controller.enqueue(data);
             } catch (error) {
               if (
                 error instanceof TypeError &&
@@ -210,7 +243,7 @@ export class AnthropicTransformer implements Transformer {
               ) {
                 isClosed = true;
               } else {
-                log(`send data error: ${error.message}`);
+                log(`send data error: ${(error as Error).message}`);
                 throw error;
               }
             }
@@ -266,9 +299,38 @@ export class AnthropicTransformer implements Transformer {
               try {
                 const chunk = JSON.parse(data);
                 totalChunks++;
-                log(`Original Response: type=${chunk.type || 'unknown'}`);
+                
+                if (totalChunks === 1) {
+                  log(`📊 [FIRST_CHUNK] 模型: ${chunk.model || 'unknown'}, ID: ${chunk.id || 'unknown'}`);
+                  if (chunk.model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                    log(`🎯 [BACKGROUND_STREAM_START] 背景模型流式响应开始`);
+                  }
+                }
 
                 model = chunk.model || model;
+                if (chunk.model && chunk.model !== model) {
+                  log(`🔄 [MODEL_RESPONSE] 响应模型: ${chunk.model}`);
+                  if (chunk.model.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                    log(`✅ [BACKGROUND_MODEL_RESPONSE] 背景模型响应确认: ${chunk.model}`);
+                  }
+                }
+
+                if (chunk.error) {
+                  const errorMessage = {
+                    type: "error",
+                    message: {
+                      type: "api_error",
+                      message: JSON.stringify(chunk.error),
+                    },
+                  };
+
+                  safeEnqueue(
+                    encoder.encode(
+                      `event: error\ndata: ${JSON.stringify(errorMessage)}\n\n`
+                    )
+                  );
+                  continue;
+                }
 
                 if (!hasStarted && !isClosed && !hasFinished) {
                   hasStarted = true;
@@ -298,10 +360,14 @@ export class AnthropicTransformer implements Transformer {
 
                 const choice = chunk.choices?.[0];
                 if (!choice) {
+                  if (model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                    log(`⚠️ [BACKGROUND_NO_CHOICE] 背景模型响应没有选择: ${JSON.stringify(chunk).substring(0, 200)}...`);
+                  }
                   continue;
                 }
 
                 if (choice?.delta?.thinking && !isClosed && !hasFinished) {
+                  log.info(`✅ [ANTHROPIC_THINKING] 接收到上游的 "thinking" 信号:`, JSON.stringify(choice.delta.thinking));
                   if (!isThinkingStarted) {
                     const contentBlockStart = {
                       type: "content_block_start",
@@ -346,6 +412,7 @@ export class AnthropicTransformer implements Transformer {
                     );
                     contentIndex++;
                   } else if (choice.delta.thinking.content) {
+                    log.info(`➡️ [ANTHROPIC_THINKING] 正在向下游发送 "thinking_delta": "${choice.delta.thinking.content}"`);
                     const thinkingChunk = {
                       type: "content_block_delta",
                       index: contentIndex,
@@ -436,7 +503,7 @@ export class AnthropicTransformer implements Transformer {
                             )}\n\n`
                           )
                         );
-                        contentIndex++
+                        contentIndex++;
                       }
                       toolCallIndexToContentBlockIndex.set(
                         toolCallIndex,
@@ -574,13 +641,23 @@ export class AnthropicTransformer implements Transformer {
 
                 if (choice?.finish_reason && !isClosed && !hasFinished) {
                   hasFinished = true;
+                  if (model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                    log(`🎯 [BACKGROUND_FINISH_REASON] 背景模型完成原因: ${choice.finish_reason}`);
+                  }
+                  log(`🏁 [STREAM_END] 总块数: ${totalChunks}, 内容块: ${contentChunks}, 工具块: ${toolCallChunks}, 模型: ${model}`);
+                  if (model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                    log(`🎯 [BACKGROUND_STREAM_END] 背景模型流式响应结束`);
+                  }
                   if (contentChunks === 0 && toolCallChunks === 0) {
                     console.error(
                       "Warning: No content in the stream response!"
                     );
                   }
 
-                  if ((hasTextContentStarted || toolCallChunks > 0) && !isClosed) {
+                  if (
+                    (hasTextContentStarted || toolCallChunks > 0) &&
+                    !isClosed
+                  ) {
                     log("content_block_stop hasTextContentStarted");
                     const contentBlockStop = {
                       type: "content_block_stop",
@@ -596,7 +673,7 @@ export class AnthropicTransformer implements Transformer {
                   }
 
                   if (!isClosed) {
-                    const stopReasonMapping = {
+                    const stopReasonMapping: Record<string, string> = {
                       stop: "end_turn",
                       length: "max_tokens",
                       tool_calls: "tool_use",
@@ -639,19 +716,69 @@ export class AnthropicTransformer implements Transformer {
                     );
                   }
 
+                  const finalResponse: any = {
+                    type: "message",
+                    role: "assistant",
+                    content: [],
+                    stop_reason: choice.finish_reason === "stop" ? "end_turn" : 
+                                choice.finish_reason === "length" ? "max_tokens" :
+                                choice.finish_reason === "tool_calls" ? "tool_use" :
+                                choice.finish_reason === "content_filter" ? "stop_sequence" : "end_turn",
+                    stop_sequence: null,
+                    usage: {
+                      input_tokens: chunk.usage?.prompt_tokens || 0,
+                      output_tokens: chunk.usage?.completion_tokens || 0,
+                    },
+                  };
+
+                  if (contentChunks > 0) {
+                    finalResponse.content.push({
+                      type: "text",
+                      text: choice.delta?.content || ""
+                    });
+                  }
+
+                  if (toolCallChunks > 0) {
+                    toolCalls.forEach((toolCall) => {
+                      finalResponse.content.push({
+                        type: "tool_use",
+                        id: toolCall.id,
+                        name: toolCall.name,
+                        input: toolCall.arguments ? JSON.parse(toolCall.arguments) : {}
+                      });
+                    });
+                  }
+
+                  log(`🎯 [FINAL_RESPONSE] Conversion complete, final Anthropic response: ${JSON.stringify(finalResponse, null, 2)}`);
+                  if (model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                    log(`🎯 [BACKGROUND_FINAL_RESPONSE] 背景模型最终响应完成`);
+                  }
                   break;
                 }
               } catch (parseError: any) {
-                log(
-                  `parseError: ${parseError.name} message: ${parseError.message} stack: ${parseError.stack} data: ${data}`
-                );
+                if (model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                  log(`❌ [BACKGROUND_PARSE_ERROR] 背景模型响应解析错误: ${parseError.message}`);
+                  log(`❌ [BACKGROUND_PARSE_ERROR] 问题数据: ${data.substring(0, 200)}...`);
+                } else {
+                  log(`parseError: ${parseError.name} message: ${parseError.message} data: ${data.substring(0, 100)}...`);
+                }
               }
             }
           }
+          
+          // 监控背景模型的流式响应结束
+          if (model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+            log(`🏁 [BACKGROUND_STREAM_LOOP_END] 背景模型流式响应主循环结束，总块数: ${totalChunks}`);
+          }
+          
           safeClose();
         } catch (error) {
           if (!isClosed) {
             try {
+              // 特别标记背景模型的错误
+              if (model?.includes("gemini-2.5-flash-lite-preview-06-17")) {
+                log(`❌ [BACKGROUND_STREAM_ERROR] 背景模型流式响应错误: ${(error as Error).message}`);
+              }
               controller.error(error);
             } catch (controllerError) {
               console.error(controllerError);
@@ -669,6 +796,8 @@ export class AnthropicTransformer implements Transformer {
       },
       cancel(reason) {
         log("cancle stream:", reason);
+        // 特别标记背景模型的取消
+        log(`❌ [STREAM_CANCEL] 流式响应被取消: ${reason}`);
       },
     });
 
@@ -678,7 +807,7 @@ export class AnthropicTransformer implements Transformer {
   private convertOpenAIResponseToAnthropic(
     openaiResponse: ChatCompletion
   ): any {
-          log(`Original OpenAI response: id=${openaiResponse.id || 'unknown'}`);
+          // log(`Original OpenAI response: id=${openaiResponse.id || 'unknown'}`); // 注释掉详细日志，避免刷屏
 
     const choice = openaiResponse.choices[0];
     if (!choice) {
@@ -692,7 +821,7 @@ export class AnthropicTransformer implements Transformer {
       });
     }
     if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
-      choice.message.tool_calls.forEach((toolCall, index) => {
+      choice.message.tool_calls.forEach((toolCall) => {
         let parsedInput = {};
         try {
           const argumentsStr = toolCall.function.arguments || "{}";
@@ -737,10 +866,8 @@ export class AnthropicTransformer implements Transformer {
         output_tokens: openaiResponse.usage?.completion_tokens || 0,
       },
     };
-    log(
-      "Conversion complete, final Anthropic response:",
-      JSON.stringify(result, null, 2)
-    );
+    // 显示完整的最终响应信息
+    log(`🎯 [FINAL_RESPONSE] Conversion complete, final Anthropic response: ${JSON.stringify(result, null, 2)}`);
     return result;
   }
 }

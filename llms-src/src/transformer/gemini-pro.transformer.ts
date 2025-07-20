@@ -5,6 +5,7 @@ import { Transformer } from "../types/transformer";
 // Gemini API 类型定义
 interface GeminiPart {
   text?: string;
+  thought?: boolean; // 添加思考块标志
   functionCall?: {
     id?: string;
     name?: string;
@@ -29,8 +30,8 @@ interface GeminiTool {
   functionDeclarations?: GeminiFunctionDeclaration[];
 }
 
-export class GeminiNativeTransformer implements Transformer {
-  name = "gemini-native";
+export class GeminiProTransformer implements Transformer {
+  name = "gemini-pro";
 
 //   endPoint = "/v1beta/models/:modelAndAction";
 
@@ -153,12 +154,20 @@ export class GeminiNativeTransformer implements Transformer {
                 }
                 
                 const paramCount = cleanedTool.parameters ? Object.keys(cleanedTool.parameters.properties || {}).length : 0;
-                log.info('🔧 [GEMINI_TOOL_DEF] 工具定义:', cleanedTool.name, ', 参数数量:', paramCount, ', 格式:', JSON.stringify(cleanedTool).substring(0, 200) + '...');
+                // log.info('🔧 [GEMINI_TOOL_DEF] 工具定义:', cleanedTool.name, ', 参数数量:', paramCount, ', 格式:', JSON.stringify(cleanedTool).substring(0, 200) + '...');
                 
                 return cleanedTool;
               }) || [],
           },
         ] : [],
+        generationConfig: {
+          thinkingConfig: {
+            includeThoughts: true,
+            thinkingBudget: 10000
+          },
+          ...(request.max_tokens && { maxOutputTokens: request.max_tokens }),
+          ...(request.temperature && { temperature: request.temperature })
+        },
       },
       config: {
         url: new URL(
@@ -170,15 +179,6 @@ export class GeminiNativeTransformer implements Transformer {
         headers: {
           "x-goog-api-key": provider.apiKey,
           Authorization: undefined,
-        },
-        generationConfig: {
-          ...(request.max_tokens && { maxOutputTokens: request.max_tokens }),
-          ...(request.temperature && { temperature: request.temperature }),
-          // 🔧 强制启用思考功能进行测试
-          thinkingConfig: {
-            includeThoughts: true,
-            thinkingBudget: 1000
-          }
         },
       },
     };
@@ -311,7 +311,7 @@ export class GeminiNativeTransformer implements Transformer {
           },
         ],
         created: Math.floor(Date.now() / 1000),
-        model: jsonResponse.modelVersion || "gemini-native",
+        model: jsonResponse.modelVersion || "gemini-pro",
         object: "chat.completion" as const,
         usage: jsonResponse.usageMetadata ? {
           completion_tokens: jsonResponse.usageMetadata.candidatesTokenCount,
@@ -364,7 +364,14 @@ export class GeminiNativeTransformer implements Transformer {
           index: 0,
           message: {
             content: candidate.content.parts
-              .filter((part: GeminiPart) => part.text)
+              .filter((part: GeminiPart) => {
+                // 过滤思考块，只做日志
+                if (part.thought === true) {
+                  log.info(`🧠 [GEMINI_THOUGHT] 捕获到思考块 (非流式): "${part.text}"`);
+                  return false;
+                }
+                return !!part.text;
+              })
               .map((part: GeminiPart) => part.text)
               .join(""),
             role: "assistant" as const,
@@ -373,7 +380,7 @@ export class GeminiNativeTransformer implements Transformer {
         },
       ],
       created: Math.floor(Date.now() / 1000),
-      model: jsonResponse.modelVersion || "gemini-native",
+      model: jsonResponse.modelVersion || "gemini-pro",
       object: "chat.completion" as const,
       usage: jsonResponse.usageMetadata ? {
         completion_tokens: jsonResponse.usageMetadata.candidatesTokenCount,
@@ -435,7 +442,7 @@ export class GeminiNativeTransformer implements Transformer {
                 ],
                 created: parseInt(new Date().getTime() / 1000 + "", 10),
                 id: "final",
-                model: "gemini-native",
+                model: "gemini-pro",
                 object: "chat.completion.chunk",
                 system_fingerprint: "fp_a49d71b8a1",
               };
@@ -457,12 +464,13 @@ export class GeminiNativeTransformer implements Transformer {
 
             // 将新数据追加到缓冲区
             const newData = decoder.decode(value, { stream: true });
+            // console.log("Gemini Raw Stream Data:", newData);
             buffer += newData;
             
             // 🔍 只记录包含思考token的数据块
-            if (newData.includes('thoughtsTokenCount') && newData.includes('"thoughtsTokenCount":')) {
-              log.info('🔍 [GEMINI_RAW_STREAM] 收到包含思考token的数据');
-            }
+            // if (newData.includes('thoughtsTokenCount') && newData.includes('"thoughtsTokenCount":')) {
+            //   log.info('🔍 [GEMINI_RAW_STREAM] 收到包含思考token的数据');
+            // }
             
             // 处理缓冲区
             await processBuffer(buffer, false);
@@ -500,9 +508,9 @@ export class GeminiNativeTransformer implements Transformer {
         // 处理缓冲区的函数
         async function processBuffer(bufferData: string, isEnd: boolean) {
           // 🔍 只记录包含思考token的缓冲区
-          if (bufferData.includes('thoughtsTokenCount') && bufferData.includes('"thoughtsTokenCount":')) {
-            log.info('🔍 [GEMINI_BUFFER_PROCESS] 处理包含思考token的缓冲区');
-          }
+          // if (bufferData.includes('thoughtsTokenCount') && bufferData.includes('"thoughtsTokenCount":')) {
+          //   log.info('🔍 [GEMINI_BUFFER_PROCESS] 处理包含思考token的缓冲区');
+          // }
           const lines = bufferData.split('\n');
           let remainingBuffer = "";
           
@@ -517,9 +525,9 @@ export class GeminiNativeTransformer implements Transformer {
                   dataLines = [currentData];
                   state = 'IN_DATA';
                   // 🔍 只记录包含思考token的数据块开始
-                  if (currentData.includes('thoughtsTokenCount')) {
-                    log.info('🔍 [GEMINI_DATA_START] 开始包含思考token的数据块');
-                  }
+                  // if (currentData.includes('thoughtsTokenCount')) {
+                  //   log.info('🔍 [GEMINI_DATA_START] 开始包含思考token的数据块');
+                  // }
                 } else if (line.trim() !== '') {
                   // 非空行但不是data开头，可能是其他SSE字段，忽略
                   log.warn('⚠️ [GEMINI_UNKNOWN_LINE] 未知行:', line.substring(0, 100) + '...');
@@ -537,9 +545,9 @@ export class GeminiNativeTransformer implements Transformer {
                 } else if (line.trim() === '') {
                   // 空行表示data块结束
                   // 🔍 只记录包含思考token的数据块结束
-                  if (dataLines.some(line => line.includes('thoughtsTokenCount'))) {
-                    log.info('🔍 [GEMINI_DATA_END] 包含思考token的数据块结束，准备处理');
-                  }
+                  // if (dataLines.some(line => line.includes('thoughtsTokenCount'))) {
+                  //   log.info('🔍 [GEMINI_DATA_END] 包含思考token的数据块结束，准备处理');
+                  // }
                   await processCompleteDataBlock();
                   state = 'WAITING_DATA';
                 } else {
@@ -568,23 +576,25 @@ export class GeminiNativeTransformer implements Transformer {
         
         // 处理完整的data块
         async function processCompleteDataBlock() {
+          
           if (dataLines.length === 0) return;
           
           // 合并所有行
           const jsonStr = dataLines.join('\n').trim();
+          // log.info(`RAW_GEMINI_CHUNK: ${jsonStr}`);
           if (!jsonStr) return;
           
           blockCounter++; // 🔍 增加数据块计数器
-          log.info('🔍 [GEMINI_PROCESSING_BLOCK] 处理第' + blockCounter + '个data块，长度:', jsonStr.length);
+          // log.info('🔍 [GEMINI_PROCESSING_BLOCK] 处理第' + blockCounter + '个data块，长度:', jsonStr.length);
           
           let chunk: any;
           try {
             chunk = JSON.parse(jsonStr);
             
                       // 🔍 只记录包含思考token的数据块
-          if (chunk.usageMetadata && chunk.usageMetadata.thoughtsTokenCount > 0) {
-            log.info('🧠 [GEMINI_THINKING_DETECTED] 第' + blockCounter + '块: 思考token=' + chunk.usageMetadata.thoughtsTokenCount + ', parts=' + (chunk.candidates?.[0]?.content?.parts?.length || 0));
-          }
+          // if (chunk.usageMetadata && chunk.usageMetadata.thoughtsTokenCount > 0) {
+          //   log.info('🧠 [GEMINI_THINKING_DETECTED] 第' + blockCounter + '块: 思考token=' + chunk.usageMetadata.thoughtsTokenCount + ', parts=' + (chunk.candidates?.[0]?.content?.parts?.length || 0));
+          // }
           
           if (chunk.usageMetadata) {
             usageMetadata = chunk.usageMetadata;
@@ -610,7 +620,7 @@ export class GeminiNativeTransformer implements Transformer {
               ],
               created: parseInt(new Date().getTime() / 1000 + "", 10),
               id: (chunk as any).responseId || "thinking_id",
-              model: (chunk as any).modelVersion || "gemini-native",
+              model: (chunk as any).modelVersion || "gemini-pro",
               object: "chat.completion.chunk",
               system_fingerprint: "fp_a49d71b8a1",
             };
@@ -650,15 +660,45 @@ export class GeminiNativeTransformer implements Transformer {
           // 🔍 只记录包含思考内容的关键信息
           const hasThinkingParts = parts.some((part: any) => part.thought === true);
           if (hasThinkingParts) {
-            log.info('🧠 [GEMINI_THINKING_PARTS] 第' + blockCounter + '块包含思考内容!');
+            // log.info('🧠 [GEMINI_THINKING_PARTS] 第' + blockCounter + '块包含思考内容!');
             parts.forEach((part: any, index: number) => {
-              if (part.thought === true) {
-                log.info('🧠 [GEMINI_THINKING_TEXT] Part ' + index + ':', '"' + part.text + '"');
-              }
+              // if (part.thought === true) {
+              //   log.info('🧠 [GEMINI_THINKING_TEXT] Part ' + index + ':', '"' + part.text + '"');
+              // }
             });
           }
 
           for (const part of parts) {
+            // 优先判断思考块
+            if (part.thought === true) {
+              // log.info(`🧠 [GEMINI_THOUGHT] 捕获并转换思考块: "${part.text}"`);
+
+              // 1. 构建一个下游 anthropic.transformer 能理解的 "thinking" chunk
+              const thinkingChunk = {
+                choices: [
+                  {
+                    delta: {
+                      // 2. 核心：创建一个 thinking 对象，并将思考内容放入
+                      thinking: {
+                        content: part.text || ""
+                      }
+                    },
+                    index: 0,
+                    finish_reason: null,
+                  },
+                ],
+                // 补全其他字段，使其成为一个合法的流式块
+                id: chunk.responseId ? `${chunk.responseId}-th` : `chatcmpl-th-${Date.now()}`,
+                model: chunk.modelVersion || "gemini-pro",
+                object: "chat.completion.chunk",
+              };
+
+              // 3. 将这个新构建的 chunk 发送到流中，给下游的转换器处理
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify(thinkingChunk)}\n\n`));
+
+              // 4. 跳过这个 part 的后续处理
+              continue;
+            }
             if (part.text) {
               content += part.text;
             } else if (part.functionCall) {

@@ -45,11 +45,11 @@ export const registerApiRoutes: FastifyPluginAsync = async (
             );
           }
           let requestBody = body;
-          let config = {};
+          let config: any = {};
           if (typeof transformer.transformRequestOut === "function") {
             const transformOut = transformer.transformRequestOut(
               body as UnifiedChatRequest
-            );
+            ) as any;
             if (transformOut.body) {
               requestBody = transformOut.body;
               config = transformOut.config || {};
@@ -73,16 +73,12 @@ export const registerApiRoutes: FastifyPluginAsync = async (
                 requestBody,
                 provider
               );
-              if (transformIn.body) {
-                requestBody = transformIn.body;
-                config = { ...config, ...transformIn.config };
-              } else {
-                requestBody = transformIn;
-              }
+              requestBody = transformIn.body || transformIn;
+              config = { ...config, ...transformIn.config };
             }
           }
-          if (provider.transformer?.[req.body.model]?.use?.length) {
-            for (const transformerName of provider.transformer[req.body.model]
+          if (provider.transformer?.[body.model]?.use?.length) {
+            for (const transformerName of provider.transformer[body.model]
               .use) {
               const transformer =
                 fastify._server!.transformerService.getTransformer(
@@ -94,10 +90,12 @@ export const registerApiRoutes: FastifyPluginAsync = async (
               ) {
                 continue;
               }
-              requestBody = transformer.transformRequestIn(
+              const transformIn = transformer.transformRequestIn(
                 requestBody,
                 provider
               );
+              requestBody = transformIn.body || transformIn;
+              config = { ...config, ...transformIn.config };
             }
           }
           const url = config.url || new URL(provider.baseUrl);
@@ -136,8 +134,8 @@ export const registerApiRoutes: FastifyPluginAsync = async (
               );
             }
           }
-          if (provider.transformer?.[req.body.model]?.use?.length) {
-            for (const transformerName of provider.transformer[req.body.model]
+          if (provider.transformer?.[body.model]?.use?.length) {
+            for (const transformerName of provider.transformer[body.model]
               .use) {
               const transformer =
                 fastify._server!.transformerService.getTransformer(
@@ -200,7 +198,7 @@ export const registerApiRoutes: FastifyPluginAsync = async (
       reply: FastifyReply
     ) => {
       // Validation
-      const { name, type, baseUrl, apiKey, models } = request.body;
+      const { id, name, type, baseUrl, apiKey, models } = request.body as any;
 
       if (!name?.trim()) {
         throw createApiError(

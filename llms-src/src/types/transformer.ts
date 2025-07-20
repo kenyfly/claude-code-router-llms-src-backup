@@ -1,4 +1,5 @@
 import { LLMProvider, UnifiedChatRequest } from "./llm";
+export type { UnifiedChatRequest } from "./llm";
 
 export type Transformer = {
   transformRequestIn?: (

@@ -4,7 +4,7 @@
     {
       "from": "initial",
       "command": "init",
-      "timestamp": "2025-07-17T14:00:46.950Z",
+      "timestamp": "2025-07-20T16:28:00.182Z",
       "args": [
         {
           "workingDirectory": "/home/li/my_new_project/claude-code-router"
@@ -13,12 +13,40 @@
     },
     {
       "from": "initialized",
+      "command": "welcome",
+      "timestamp": "2025-07-20T16:28:05.749Z",
+      "args": []
+    },
+    {
+      "from": "service_discovery",
+      "command": "init",
+      "timestamp": "2025-07-20T16:36:36.133Z",
+      "args": []
+    },
+    {
+      "from": "initialized",
+      "command": "init",
+      "timestamp": "2025-07-20T16:36:45.191Z",
+      "args": [
+        {
+          "workingDirectory": "/home/li/my_new_project/claude-code-router"
+        }
+      ]
+    },
+    {
+      "from": "initialized",
+      "command": "welcome",
+      "timestamp": "2025-07-20T16:36:50.941Z",
+      "args": []
+    },
+    {
+      "from": "service_discovery",
       "command": "action",
-      "timestamp": "2025-07-17T14:07:08.403Z",
+      "timestamp": "2025-07-20T16:37:22.469Z",
       "args": [
         "luban"
       ]
     }
   ],
-  "lastUpdated": "2025-07-17T14:07:08.543Z"
+  "lastUpdated": "2025-07-20T16:37:22.559Z"
 }

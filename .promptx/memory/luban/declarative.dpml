@@ -553,4 +553,85 @@
     </content>
     <tags>#最佳实践 #流程管理</tags>
   </item>
+  <item id="mem_1752823235350_9mbo2zk1o" time="2025/07/18 15:20">
+    <content>
+      我们完整地完成了对 `new.zjcspace.xyz` AI 供应商的集成开发与测试工作。主要步骤和成果如下：
+    
+      1.  **初步调查**: 根据用户提供的 API Key 和 URL，我们首先创建了调查文档，并尝试通过 `curl` 进行初步的 API 调用。
+    
+      2.  **API 兼容性分析**: 发现该供应商的 API 与 OpenAI 的格式高度兼容，但模型列表不同。通过 `/v1/models` 端点，我们获取了其支持的模型列表，并成功使用 `gemini-2.5-pro` 模型完成了基本通信测试。
+    
+      3.  **转换器开发**: 基于其与 OpenAI 的兼容性，我们为其开发了一个专属的、逻辑相对简单的 `ZjcspaceTransformer`。其核心功能是直接透传请求和响应，只负责处理 URL 和认证头的构建。
+    
+      4.  **全面功能测试**: 我们设计并执行了一套全面的自动化测试脚本，覆盖了**流式响应**、**工具调用**和 **JSON 输出模式**等核心功能。
+    
+      5.  **问题发现与修复**:
+      - **测试发现**: JSON 模式的测试暴露出一个问题——供应商返回的 JSON 被包裹在额外的解释性文本中。
+      - **转换器优化**: 针对该问题，我们对 `zjcspace.transformer.ts` 中的 `transformResponseOut` 方法进行了优化，增加了从响应文本中提取纯净 JSON 的逻辑，确保了数据的一致性和可用性。
+    
+      6.  **文档与报告**:
+      - 创建了详细的**开发计划** (`development_plan.md`)。
+      - 创建了完整的**测试计划** (`comprehensive_test_plan.md`) 和配套的自动化测试脚本。
+      - 生成了最终的**功能测试报告** (`final_test_report.md`)，总结了各项功能的表现和结论。
+    
+      **结论**: 通过这一系列严谨的流程，我们不仅成功地将 `new.zjcspace.xyz` 集成到了系统中，还通过测试发现并解决了一个潜在的数据格式问题，确保了该转换器的健壮性。此过程可以作为未来集成新供应商的标准操作流程。
+    </content>
+    <tags>#流程管理 #工具使用</tags>
+  </item>
+  <item id="mem_1752823847026_l8mepgdog" time="2025/07/18 15:30">
+    <content>
+      ### 新增端点转换器开发流程
+    
+      1.  **创建转换器文件**:
+      *   在 `llms-src/src/transformer/` 目录下创建一个新的 `your-transformer-name.transformer.ts` 文件。
+      *   这个文件需要实现 `Transformer` 接口，并且必须包含 `name` 和 `endPoint` 两个属性。
+    
+      2.  **在主索引中注册 (`index.ts`)**:
+      *   **文件**: `llms-src/src/transformer/index.ts`
+      *   **操作**:
+      1.  从你创建的文件中导入新的转换器类。
+      2.  在 `transformers` 数组中添加一个 `new YourTransformer()` 实例。
+      3.  在文件末尾的 `export` 语句中导出你的转换器类。
+    
+      3.  **在服务层中注册 (`transformer.ts`)**:
+      *   **文件**: `llms-src/src/services/transformer.ts`
+      *   **操作**:
+      1.  在文件顶部从 `@/transformer` 导入你的转换器类。
+      2.  在 `registerDefaultTransformersInternal` 方法内部：
+      *   创建一个 `new YourTransformer()` 实例并赋值给一个常量。
+      *   调用 `this.registerTransformer(instance.name, instance)` 来注册这个实例。
+    
+      遵循以上三个步骤，就可以确保一个新的转换器被系统正确地加载、注册并激活。
+    </content>
+    <tags>#流程管理</tags>
+  </item>
+  <item id="mem_1752846550003_55k0ra7h1" time="2025/07/18 21:49">
+    <content>
+      已完成zjcspace.transformer.ts的日志优化（请求头/请求体/消息体持久化保存、日志简化、版本号统一），并实现了自动多轮/工具调用驱动的最小可行性测试脚本，验证了zjcspace-gemini-2.5-pro的function calling能力和transformer链路的兼容性。当前重点在于分析多轮链路与前端自动驱动的兼容性问题。
+    </content>
+    <tags>#工具使用</tags>
+  </item>
+  <item id="mem_1752902542024_twlqz0zzs" time="2025/07/19 13:22">
+    <content>
+      成功优化了响应缓慢的 `zjcspace` 转换器。通过创建一个新的 `zjcspace-pro` 版本，我们实现了一种“手动流式处理”技术，它能够实时解析单个响应流中的多个独立JSON对象。这个新方案解决了原转换器因阻塞式`await response.json()`导致的长时间等待问题，为处理多步响应的服务端提供了低延迟、体验更佳的流式效果。新的转换器已完全注册并可供使用。
+    </content>
+    <tags>#其他</tags>
+  </item>
+  <item id="mem_1753001719322_78ouds701" time="2025/07/20 16:55">
+    <content>
+      我们正在实施一个计划，以使 Gemini-pro 转换器生成的事件流完全兼容 Anthropic Messages API 的规范，从而提升客户端体验。
+    
+      **实施计划及当前进度：**
+    
+      1.  **分析与设计：** (已完成) 我们已经通过分析 `anthropic.transformer.ts` 文件，明确了需要生成的完整事件流结构，包括 `message_start`, `content_block_*`, `message_delta`, 和 `message_stop` 等关键事件。
+    
+      2.  **实现 &#x27;thinking&#x27; 状态：** (下一步)
+      3.  **实现工具调用事件流：** (待办)
+      4.  **端到端测试与验证：** (待办)
+      5.  **代码审查与重构：** (待办)
+    
+      我们现在准备开始第二步。
+    </content>
+    <tags>#工具使用</tags>
+  </item>
 </memory>

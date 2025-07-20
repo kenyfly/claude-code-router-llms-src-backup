@@ -15,7 +15,7 @@ const getUseModel = (req: any, tokenCount: number, config: any) => {
   }
   // If the model is claude-3-5-haiku, use the background model
   if (req.body.model?.startsWith("claude-3-5-haiku") && config.Router.background) {
-    log("Using background model for ", req.body.model);
+    log(`🔄 [ROUTER] 检测到 claude-3-5-haiku，路由到背景模型: ${config.Router.background}`);
     return config.Router.background;
   }
   // if exits thinking, use the think model
@@ -78,6 +78,7 @@ export const router = async (req: any, res: any, config: any) => {
       });
     }
     const model = getUseModel(req, tokenCount, config);
+    log(`🎯 [ROUTER_FINAL] 最终选择模型: ${model}`);
     req.body.model = model;
   } catch (error: any) {
     log("Error in router middleware:", error.message);

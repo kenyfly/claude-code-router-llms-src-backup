@@ -4,12 +4,15 @@ import { ConfigService } from "./config";
 import {
   AnthropicTransformer,
   GeminiTransformer,
+  GeminiProTransformer,
   DeepseekTransformer,
   TooluseTransformer,
   OpenrouterTransformer,
   OpenAITransformer,
   NewAPITransformer,
   GeminiNativeTransformer,
+  ZjcspaceTransformer,
+  ZjcspaceProTransformer,
 } from "@/transformer";
 
 interface TransformerConfig {
@@ -120,21 +123,34 @@ export class TransformerService {
     try {
       const anthropic = new AnthropicTransformer();
       const gemini = new GeminiTransformer();
+      const geminiPro = new GeminiProTransformer();
       const deepseek = new DeepseekTransformer();
       const tooluse = new TooluseTransformer();
       const openrouter = new OpenrouterTransformer();
       const openai = new OpenAITransformer();
       const newapi = new NewAPITransformer();
       const geminiNative = new GeminiNativeTransformer();
+      // 创建调试版本的zjcspace transformer
+      const zjcspace = new ZjcspaceTransformer({
+        logLevel: 'verbose',
+        logCategories: {
+          rawData: true,
+          chunkProcessing: true
+        }
+      });
+      const zjcspacePro = new ZjcspaceProTransformer();
 
       this.registerTransformer(anthropic.name, anthropic);
       this.registerTransformer(gemini.name, gemini);
+      this.registerTransformer(geminiPro.name, geminiPro);
       this.registerTransformer(deepseek.name, deepseek);
       this.registerTransformer(tooluse.name, tooluse);
       this.registerTransformer(openrouter.name, openrouter);
       this.registerTransformer(openai.name, openai);
       this.registerTransformer(newapi.name, newapi);
       this.registerTransformer(geminiNative.name, geminiNative);
+      this.registerTransformer(zjcspace.name, zjcspace);
+      this.registerTransformer(zjcspacePro.name, zjcspacePro);
     } catch (error) {
       log("transformer regist error:", error);
     }

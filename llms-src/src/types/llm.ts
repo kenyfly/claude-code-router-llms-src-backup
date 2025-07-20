@@ -43,6 +43,7 @@ export interface UnifiedMessage {
     };
   }>;
   tool_call_id?: string;
+  name?: string; // 新增，兼容 Gemini 工具响应
   cache_control?: {
     type?: string
   };

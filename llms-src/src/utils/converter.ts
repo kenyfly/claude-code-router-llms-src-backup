@@ -72,6 +72,7 @@ export function convertToOpenAI(
       }
       toolResponsesQueue.get(msg.tool_call_id).push({
         role: "tool",
+        name: msg.name || msg.tool_call_id || "unknown",
         content: msg.content,
         tool_call_id: msg.tool_call_id,
       });
@@ -108,7 +109,7 @@ export function convertToOpenAI(
         if (toolResponsesQueue.has(toolCall.id)) {
           const responses = toolResponsesQueue.get(toolCall.id);
 
-          responses.forEach((response) => {
+          responses.forEach((response: any) => {
             messages.push(response);
           });
 
@@ -130,7 +131,7 @@ export function convertToOpenAI(
 
   if (toolResponsesQueue.size > 0) {
     for (const [id, responses] of toolResponsesQueue.entries()) {
-      responses.forEach((response) => {
+      responses.forEach((response: any) => {
         messages.push(response);
       });
     }
@@ -210,11 +211,9 @@ export function convertFromOpenAI(
 
     if (msg.role === "tool") {
       return {
-        role: msg.role as "tool",
-        content:
-          typeof msg.content === "string"
-            ? msg.content
-            : JSON.stringify(msg.content),
+        role: "tool",
+        name: (msg as any).name || (msg as any).tool_call_id || "unknown", // 兜底
+        content: typeof msg.content === "string" ? msg.content : JSON.stringify(msg.content),
         tool_call_id: (msg as any).tool_call_id,
       };
     }
@@ -244,7 +243,7 @@ export function convertFromOpenAI(
       if (typeof request.tool_choice === "string") {
         result.tool_choice = request.tool_choice;
       } else if (request.tool_choice.type === "function") {
-        result.tool_choice = request.tool_choice.function.name;
+        result.tool_choice = { type: "tool", name: request.tool_choice.function.name };
       }
     }
   }
@@ -334,6 +333,7 @@ export function convertFromAnthropic(
         toolResults.forEach((toolResult) => {
           messages.push({
             role: "tool",
+            name: toolResult.name || toolResult.tool_use_id, // 新增，兼容 Gemini
             content:
               typeof toolResult.content === "string"
                 ? toolResult.content
@@ -443,12 +443,16 @@ export function convertFromAnthropic(
       if (request.tool_choice.type === "auto") {
         result.tool_choice = "auto";
       } else if (request.tool_choice.type === "tool") {
-        result.tool_choice = request.tool_choice.name;
+        result.tool_choice = { type: "tool", name: request.tool_choice.name };
       }
     }
   }
 
   return result;
+}
+
+export function convertToAnthropic(request: UnifiedChatRequest): AnthropicChatRequest {
+  throw new Error("convertToAnthropic 未实现");
 }
 
 export function convertRequest(

@@ -2,6 +2,8 @@ import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { config } from "dotenv";
 
+const projectRoot = join(__dirname, "..", "..", "..");
+
 export interface ConfigOptions {
   envPath?: string;
   jsonPath?: string;
@@ -66,7 +68,7 @@ export class ConfigService {
 
     const jsonPath = this.isAbsolutePath(this.options.jsonPath)
       ? this.options.jsonPath
-      : join(process.cwd(), this.options.jsonPath);
+      : join(projectRoot, this.options.jsonPath);
 
     if (existsSync(jsonPath)) {
       try {
@@ -85,7 +87,7 @@ export class ConfigService {
   private loadEnvConfig(): void {
     const envPath = this.isAbsolutePath(this.options.envPath!)
       ? this.options.envPath!
-      : join(process.cwd(), this.options.envPath!);
+      : join(projectRoot, this.options.envPath!);
 
     if (existsSync(envPath)) {
       try {

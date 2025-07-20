@@ -130,7 +130,7 @@ export class GeminiTransformer implements Transformer {
     const max_tokens: number | undefined = request.max_tokens;
     const temperature: number | undefined = request.temperature;
     const stream: boolean | undefined = request.stream;
-    const tool_choice: "auto" | "none" | string | undefined =
+    const tool_choice: "auto" | "none" | "required" | { type: "auto" | "none" | "any" | "tool"; name?: string } | undefined =
       request.tool_choice;
 
     const unifiedChatRequest: UnifiedChatRequest = {
@@ -178,15 +178,15 @@ export class GeminiTransformer implements Transformer {
 
     if (Array.isArray(tools)) {
       unifiedChatRequest.tools = [];
-      tools.forEach((tool) => {
+      tools.forEach((tool: any) => {
         if (Array.isArray(tool.functionDeclarations)) {
-          tool.functionDeclarations.forEach((tool) => {
+          tool.functionDeclarations.forEach((funcDecl: any) => {
             unifiedChatRequest.tools!.push({
               type: "function",
               function: {
-                name: tool.name,
-                description: tool.description,
-                parameters: tool.parameters,
+                name: funcDecl.name,
+                description: funcDecl.description,
+                parameters: funcDecl.parameters,
               },
             });
           });
@@ -287,9 +287,28 @@ export class GeminiTransformer implements Transformer {
               } else {
                 break;
               }
-              log("gemini chunk:", chunk);
-              chunk = JSON.parse(chunk);
-              const tool_calls = chunk.candidates[0].content.parts
+              // log("gemini chunk:", chunk); // 注释掉单个块的详细日志，避免刷屏
+              const parsedChunk: any = JSON.parse(chunk);
+              
+              // 🔍 添加详细的调试日志来分析思考内容
+              if (parsedChunk.candidates && parsedChunk.candidates[0] && parsedChunk.candidates[0].content && parsedChunk.candidates[0].content.parts) {
+                const parts = parsedChunk.candidates[0].content.parts;
+                log(`🔍 [GEMINI_DEBUG] 当前块包含 ${parts.length} 个 parts`);
+                
+                parts.forEach((part: any, index: number) => {
+                  if (part.text) {
+                    const isThought = part.thought === true;
+                    const textPreview = part.text.length > 50 ? part.text.substring(0, 50) + "..." : part.text;
+                    log(`🔍 [GEMINI_DEBUG] Part ${index}: ${isThought ? '🧠思考' : '💬回答'} | 内容: "${textPreview}" | thought=${part.thought} | 完整属性:`, JSON.stringify(part, null, 2));
+                  } else if (part.functionCall) {
+                    log(`🔍 [GEMINI_DEBUG] Part ${index}: 🔧工具调用 | function: ${part.functionCall.name}`);
+                  } else {
+                    log(`🔍 [GEMINI_DEBUG] Part ${index}: ❓未知类型 | 属性:`, JSON.stringify(part, null, 2));
+                  }
+                });
+              }
+              
+              const tool_calls = parsedChunk.candidates[0].content.parts
                 .filter((part: Part) => part.functionCall)
                 .map((part: Part) => ({
                   id:
@@ -301,12 +320,12 @@ export class GeminiTransformer implements Transformer {
                     arguments: JSON.stringify(part.functionCall?.args || {}),
                   },
                 }));
-              const res = {
+              const res: any = {
                 choices: [
                   {
                     delta: {
                       role: "assistant",
-                      content: chunk.candidates[0].content.parts
+                      content: parsedChunk.candidates[0].content.parts
                         .filter((part: Part) => part.text)
                         .map((part: Part) => part.text)
                         .join("\n"),
@@ -314,21 +333,28 @@ export class GeminiTransformer implements Transformer {
                         tool_calls.length > 0 ? tool_calls : undefined,
                     },
                     finish_reason:
-                      chunk.candidates[0].finishReason?.toLowerCase() || null,
+                      parsedChunk.candidates[0].finishReason?.toLowerCase() || null,
                     index:
-                      chunk.candidates[0].index || tool_calls.length > 0
+                      parsedChunk.candidates[0].index || tool_calls.length > 0
                         ? 1
                         : 0,
                     logprobs: null,
                   },
                 ],
                 created: parseInt(new Date().getTime() / 1000 + "", 10),
-                id: chunk.responseId || "",
-                model: chunk.modelVersion || "",
+                id: parsedChunk.responseId || "",
+                model: parsedChunk.modelVersion || "",
                 object: "chat.completion.chunk",
                 system_fingerprint: "fp_a49d71b8a1",
               };
-              log(`gemini response: candidates=${res.candidates?.length || 0}`);
+              if (parsedChunk.usageMetadata) {
+                res.usage = {
+                  completion_tokens: parsedChunk.usageMetadata.candidatesTokenCount,
+                  prompt_tokens: parsedChunk.usageMetadata.promptTokenCount,
+                  total_tokens: parsedChunk.usageMetadata.totalTokenCount,
+                };
+              }
+              // log(`gemini response: candidates=${res.candidates?.length || 0}`); // 注释掉详细日志，避免刷屏
               controller.enqueue(
                 encoder.encode(`data: ${JSON.stringify(res)}\n\n`)
               );
