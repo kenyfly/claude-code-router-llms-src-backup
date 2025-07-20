@@ -1,6 +1,55 @@
 import { log } from "../utils/log";
 import { LLMProvider, UnifiedChatRequest, UnifiedMessage, UnifiedTool } from "../types/llm";
 import { Transformer } from "../types/transformer";
+import * as fs from 'fs';
+import * as path from 'path';
+
+// vvvvvvvvvvvv NEW HELPER FUNCTION vvvvvvvvvvvv
+/**
+ * Recursively cleans the properties of a JSON schema to keep only fields supported by Gemini.
+ * @param properties The properties object to clean.
+ * @returns A new, cleaned properties object.
+ */
+function cleanSchemaProperties(properties: Record<string, any>): Record<string, any> {
+  const cleanedProperties: Record<string, any> = {};
+
+  Object.keys(properties).forEach((key) => {
+    const prop = properties[key];
+    const cleanedProp: any = {};
+
+    // Strict whitelist of supported fields
+    cleanedProp.type = prop.type;
+    if (prop.description) cleanedProp.description = prop.description;
+    if (prop.enum) cleanedProp.enum = prop.enum;
+
+    // Recursive cleaning for array items
+    if (prop.type === 'array' && prop.items && typeof prop.items === 'object') {
+      cleanedProp.items = {
+        type: prop.items.type,
+      };
+      if (prop.items.description) {
+        cleanedProp.items.description = prop.items.description;
+      }
+      // *** THIS IS THE KEY RECURSIVE FIX ***
+      if (prop.items.properties) {
+        cleanedProp.items.properties = cleanSchemaProperties(prop.items.properties);
+      }
+       if (prop.items.required) {
+        cleanedProp.items.required = prop.items.required;
+      }
+    }
+
+    // Recursive cleaning for object properties
+    if (prop.type === 'object' && prop.properties) {
+        cleanedProp.properties = cleanSchemaProperties(prop.properties);
+    }
+
+    cleanedProperties[key] = cleanedProp;
+  });
+
+  return cleanedProperties;
+}
+// ^^^^^^^^^^^^ END OF HELPER FUNCTION ^^^^^^^^^^^^
 
 // Gemini API 类型定义
 interface GeminiPart {
@@ -10,6 +59,13 @@ interface GeminiPart {
     id?: string;
     name?: string;
     args?: Record<string, any>;
+  };
+  functionResponse?: {
+    name: string;
+    response: {
+      name: string;
+      content: any;
+    };
   };
 }
 
@@ -39,62 +95,138 @@ export class GeminiProTransformer implements Transformer {
     request: UnifiedChatRequest,
     provider: LLMProvider
   ): Record<string, any> {
+    // --- Start of debug code ---
+    try {
+      const debugDir = path.join(process.cwd(), 'debug');
+      if (!fs.existsSync(debugDir)) {
+        fs.mkdirSync(debugDir, { recursive: true });
+      }
+      const filePath = path.join(debugDir, `gemini-pro-request-${Date.now()}.json`);
+      fs.writeFileSync(filePath, JSON.stringify(request, null, 2));
+      log.info(`[GEMINI_DEBUG] Saved incoming request to ${filePath}`);
+    } catch (e) {
+      log.error('[GEMINI_DEBUG] Failed to save request file', e);
+    }
+    // --- End of debug code ---
+
     return {
       body: {
         contents: request.messages.map((message: UnifiedMessage) => {
           let role: "user" | "model";
+          const parts: GeminiPart[] = [];
+
           if (message.role === "assistant") {
             role = "model";
-          } else if (["user", "system", "tool"].includes(message.role)) {
-            role = "user";
-          } else {
-            role = "user"; // Default to user if role is not recognized
-          }
-          
-          const parts: GeminiPart[] = [];
-          
-          if (typeof message.content === "string") {
-            parts.push({
-              text: message.content,
-            });
-          } else if (Array.isArray(message.content)) {
-            parts.push(
-              ...message.content.map((content) => {
-                if (content.type === "text") {
-                  return {
-                    text: content.text || "",
-                  };
-                }
-                return { text: "" };
-              }).filter(part => part.text !== "")
-            );
-          }
 
-          if (Array.isArray(message.tool_calls)) {
-            parts.push(
-              ...message.tool_calls.map((toolCall) => {
-                // 安全处理 arguments
-                let args = {};
-                try {
-                  if (typeof toolCall.function.arguments === "string") {
-                    args = JSON.parse(toolCall.function.arguments || "{}");
-                  } else if (typeof toolCall.function.arguments === "object") {
-                    args = toolCall.function.arguments || {};
+            // 处理 assistant 的文本内容
+            if (typeof message.content === "string") {
+              parts.push({ text: message.content });
+            } else if (Array.isArray(message.content)) {
+              parts.push(
+                ...message.content.map((content) => {
+                  if (content.type === "text") {
+                    return {
+                      text: content.text || "",
+                    };
                   }
-                } catch (error) {
-                  log.warn('⚠️ [GEMINI_TOOL_ARGS_PARSE_ERROR] 工具参数解析失败:', error);
-                  args = {};
+                  return { text: "" };
+                }).filter(part => part.text !== "")
+              );
+            }
+
+            // 处理 assistant 发起的工具调用
+            if (Array.isArray(message.tool_calls)) {
+              parts.push(
+                ...message.tool_calls.map((toolCall) => {
+                  // 安全处理 arguments
+                  let args = {};
+                  try {
+                    if (typeof toolCall.function.arguments === "string") {
+                      args = JSON.parse(toolCall.function.arguments || "{}");
+                    } else if (typeof toolCall.function.arguments === "object") {
+                      args = toolCall.function.arguments || {};
+                    }
+                  } catch (error) {
+                    log.warn('⚠️ [GEMINI_TOOL_ARGS_PARSE_ERROR] 工具参数解析失败:', error);
+                    args = {};
+                  }
+                  
+                  return {
+                    functionCall: {
+                      id: toolCall.id || `tool_${Math.random().toString(36).substring(2, 15)}`,
+                      name: toolCall.function.name,
+                      args: args,
+                    },
+                  };
+                })
+              );
+            }
+
+          } else if (message.role === "tool") {
+            role = "user"; // 角色映射保持不变
+
+            const toolCallId = message.tool_call_id;
+            let functionName: string | undefined;
+
+            // 关键修正：在整个消息历史中向后查找，根据 tool_call_id 找回函数名
+            if (toolCallId) {
+              for (const prevMessage of request.messages) {
+                if (prevMessage.role === "assistant" && Array.isArray(prevMessage.tool_calls)) {
+                  const originalToolCall = prevMessage.tool_calls.find(tc => tc.id === toolCallId);
+                  if (originalToolCall) {
+                    functionName = originalToolCall.function.name;
+                    break; // 找到后立即退出循环
+                  }
                 }
-                
-                return {
-                  functionCall: {
-                    id: toolCall.id || `tool_${Math.random().toString(36).substring(2, 15)}`,
-                    name: toolCall.function.name,
-                    args: args,
+              }
+            }
+
+            if (functionName) {
+              // ---- 理想情况：成功找回函数名，构建标准的 functionResponse ----
+              let toolResponseContent;
+              try {
+                toolResponseContent = typeof message.content === 'string'
+                  ? JSON.parse(message.content)
+                  : message.content;
+              } catch (e) {
+                toolResponseContent = { result: message.content };
+              }
+
+              parts.push({
+                functionResponse: {
+                  name: functionName,
+                  response: {
+                    name: functionName,
+                    content: toolResponseContent,
                   },
-                };
-              })
-            );
+                },
+              });
+            } else {
+              // ---- 降级策略：没能找回函数名，作为纯文本发送以保证流程不中断 ----
+              log.warn(`⚠️ [GEMINI_TOOL_RESCUE] Could not find function name for tool_call_id '${toolCallId}'. Sending as plain text.`);
+              parts.push({
+                text: typeof message.content === 'string' ? message.content :
+                  JSON.stringify(message.content)
+              });
+            }
+          } else { // 包括 "user" 和 "system"
+            role = "user";
+
+            // 处理 user 或 system 的文本内容
+            if (typeof message.content === "string") {
+              parts.push({ text: message.content });
+            } else if (Array.isArray(message.content)) {
+              parts.push(
+                ...message.content.map((content) => {
+                  if (content.type === "text") {
+                    return {
+                      text: content.text || "",
+                    };
+                  }
+                  return { text: "" };
+                }).filter(part => part.text !== "")
+              );
+            }
           }
           
           return {
@@ -106,60 +238,29 @@ export class GeminiProTransformer implements Transformer {
           {
             functionDeclarations:
               request.tools.map((tool: UnifiedTool) => {
-                // 严格按照Gemini文档格式清理工具定义
-                const cleanedTool: any = {
-                  name: tool.function.name,
-                  description: tool.function.description,
+                const cleanedParameters: any = {
+                  type: "object",
                 };
-                
-                // 只有当有参数时才添加 parameters 字段
-                if (tool.function.parameters && 
-                    (tool.function.parameters.properties || tool.function.parameters.required)) {
-                  
-                  cleanedTool.parameters = {
-                    type: "object",
-                    properties: {} as Record<string, any>,
-                  };
-                  
-                  // 复制并清理 properties
+
+                if (tool.function.parameters) {
                   if (tool.function.parameters.properties) {
-                    Object.keys(tool.function.parameters.properties).forEach((key) => {
-                      const prop = tool.function.parameters.properties[key];
-                      const cleanedProp: any = {
-                        type: prop.type,
-                      };
-                      
-                      // 只保留Gemini文档中明确支持的字段
-                      if (prop.description) cleanedProp.description = prop.description;
-                      if (prop.enum) cleanedProp.enum = prop.enum;
-                      
-                      // 处理 items（数组类型）
-                      if (prop.items && typeof prop.items === "object") {
-                        cleanedProp.items = {
-                          type: prop.items.type,
-                        };
-                        if (prop.items.description) cleanedProp.items.description = prop.items.description;
-                      }
-                      
-                      cleanedTool.parameters.properties[key] = cleanedProp;
-                    });
+                    // Use the new recursive helper function
+                    cleanedParameters.properties = cleanSchemaProperties(tool.function.parameters.properties);
                   }
-                  
-                  // 复制 required 字段
-                  if (tool.function.parameters.required && 
-                      Array.isArray(tool.function.parameters.required) && 
+                  if (Array.isArray(tool.function.parameters.required) &&
                       tool.function.parameters.required.length > 0) {
-                    cleanedTool.parameters.required = tool.function.parameters.required;
+                    cleanedParameters.required = tool.function.parameters.required;
                   }
                 }
-                
-                const paramCount = cleanedTool.parameters ? Object.keys(cleanedTool.parameters.properties || {}).length : 0;
-                // log.info('🔧 [GEMINI_TOOL_DEF] 工具定义:', cleanedTool.name, ', 参数数量:', paramCount, ', 格式:', JSON.stringify(cleanedTool).substring(0, 200) + '...');
-                
-                return cleanedTool;
+
+                return {
+                  name: tool.function.name,
+                  description: tool.function.description,
+                  parameters: cleanedParameters,
+                };
               }) || [],
           },
-        ] : [],
+        ] : undefined, // 如果没有工具，则不发送该字段
         generationConfig: {
           thinkingConfig: {
             includeThoughts: true,
@@ -409,6 +510,7 @@ export class GeminiProTransformer implements Transformer {
         let buffer = "";
         let usageMetadata: any = null;
         let hasInjectedThinking = false;
+        let hasProducedContent = false; // <-- 添加内容追踪标志
         let blockCounter = 0; // 🔍 添加数据块计数器
 
         // SSE 解析状态机
@@ -424,6 +526,23 @@ export class GeminiProTransformer implements Transformer {
               if (buffer.trim()) {
                 log.warn('⚠️ [GEMINI_STREAM_WARN] 流结束时缓冲区中仍有未处理数据:', buffer.substring(0, 200) + '...');
                 await processBuffer(buffer, true); // 强制处理
+              }
+              
+              // <-- 在这里注入空内容块
+              if (!hasProducedContent) {
+                log.info('🟡 [GEMINI_EMPTY_STREAM] 为保证消息合法，注入一个空内容块');
+                const emptyContentChunk = {
+                  choices: [{
+                    delta: { role: "assistant", content: "" },
+                    index: 0,
+                    finish_reason: null,
+                  }],
+                  created: parseInt(String(Date.now() / 1000)),
+                  id: "empty_content_fix",
+                  model: "gemini-pro",
+                  object: "chat.completion.chunk",
+                };
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify(emptyContentChunk)}\n\n`));
               }
               
               // 发送最终的结束块
@@ -729,6 +848,10 @@ export class GeminiProTransformer implements Transformer {
 
           if (tool_calls.length > 0) {
             log.info('🔧 [GEMINI_TOOL_CALLS] 工具调用数量:', tool_calls.length);
+          }
+
+          if (content || tool_calls.length > 0) { // <-- 有内容时设置标志
+            hasProducedContent = true;
           }
 
           const res: any = {

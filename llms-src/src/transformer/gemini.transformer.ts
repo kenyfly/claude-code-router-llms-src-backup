@@ -293,15 +293,15 @@ export class GeminiTransformer implements Transformer {
               // 🔍 添加详细的调试日志来分析思考内容
               if (parsedChunk.candidates && parsedChunk.candidates[0] && parsedChunk.candidates[0].content && parsedChunk.candidates[0].content.parts) {
                 const parts = parsedChunk.candidates[0].content.parts;
-                log(`🔍 [GEMINI_DEBUG] 当前块包含 ${parts.length} 个 parts`);
+                // log(`🔍 [GEMINI_DEBUG] 当前块包含 ${parts.length} 个 parts`);
                 
                 parts.forEach((part: any, index: number) => {
                   if (part.text) {
                     const isThought = part.thought === true;
                     const textPreview = part.text.length > 50 ? part.text.substring(0, 50) + "..." : part.text;
-                    log(`🔍 [GEMINI_DEBUG] Part ${index}: ${isThought ? '🧠思考' : '💬回答'} | 内容: "${textPreview}" | thought=${part.thought} | 完整属性:`, JSON.stringify(part, null, 2));
+                    // log(`🔍 [GEMINI_DEBUG] Part ${index}: ${isThought ? '🧠思考' : '💬回答'} | 内容: "${textPreview}" | thought=${part.thought} | 完整属性:`, JSON.stringify(part, null, 2));
                   } else if (part.functionCall) {
-                    log(`🔍 [GEMINI_DEBUG] Part ${index}: 🔧工具调用 | function: ${part.functionCall.name}`);
+                    // log(`🔍 [GEMINI_DEBUG] Part ${index}: 🔧工具调用 | function: ${part.functionCall.name}`);
                   } else {
                     log(`🔍 [GEMINI_DEBUG] Part ${index}: ❓未知类型 | 属性:`, JSON.stringify(part, null, 2));
                   }

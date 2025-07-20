@@ -232,9 +232,9 @@ export class AnthropicTransformer implements Transformer {
             try {
               const dataStr = new TextDecoder().decode(data);
               // 为了避免刷屏，我们只打印包含 "thinking" 的事件
-              if (dataStr.includes("thinking")) {
-                log.info(`📬 [ANTHROPIC_SSE_EVENT] 发送给客户端的思考事件:`, dataStr.trim());
-              }
+              // if (dataStr.includes("thinking")) {
+              //   log.info(`📬 [ANTHROPIC_SSE_EVENT] 发送给客户端的思考事件:`, dataStr.trim());
+              // }
               controller.enqueue(data);
             } catch (error) {
               if (
@@ -367,7 +367,7 @@ export class AnthropicTransformer implements Transformer {
                 }
 
                 if (choice?.delta?.thinking && !isClosed && !hasFinished) {
-                  log.info(`✅ [ANTHROPIC_THINKING] 接收到上游的 "thinking" 信号:`, JSON.stringify(choice.delta.thinking));
+                  // log.info(`✅ [ANTHROPIC_THINKING] 接收到上游的 "thinking" 信号:`, JSON.stringify(choice.delta.thinking));
                   if (!isThinkingStarted) {
                     const contentBlockStart = {
                       type: "content_block_start",
@@ -412,7 +412,7 @@ export class AnthropicTransformer implements Transformer {
                     );
                     contentIndex++;
                   } else if (choice.delta.thinking.content) {
-                    log.info(`➡️ [ANTHROPIC_THINKING] 正在向下游发送 "thinking_delta": "${choice.delta.thinking.content}"`);
+                    // log.info(`➡️ [ANTHROPIC_THINKING] 正在向下游发送 "thinking_delta": "${choice.delta.thinking.content}"`);
                     const thinkingChunk = {
                       type: "content_block_delta",
                       index: contentIndex,
