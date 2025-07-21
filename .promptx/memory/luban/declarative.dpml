@@ -634,4 +634,10 @@
     </content>
     <tags>#工具使用</tags>
   </item>
+  <item id="mem_1753036345908_10ubqcrwj" time="2025/07/21 02:32">
+    <content>
+      我们解决了一个极其棘手的 Gemini 工具调用失败问题。根本原因是 Gemini API 对工具的 JSON Schema 定义有非常严格但文档不明确的限制，任何它不支持的字段（即使是像 `minLength` 这样深层嵌套的字段）都会导致其解析器静默失败，从而使模型生成错误的工具参数。最终的解决方案是在 `gemini-pro.transformer.ts` 中实现一个递归的清理函数，该函数会遍历整个参数结构，只保留一个严格的白名单字段（`type`, `description`, `enum`, `items`, `properties`, `required`），确保了无论参数有多复杂，最终发送给 Gemini 的工具定义都是 100% 纯净和兼容的。
+    </content>
+    <tags>#工具使用</tags>
+  </item>
 </memory>

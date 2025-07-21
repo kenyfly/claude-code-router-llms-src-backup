@@ -8,7 +8,7 @@
     {
       "name": "zuke-claude",
       "api_base_url": "https://zuke.chat/v1/chat/completions",
-      "api_key": "sk-oYyB6k1Ee2T5NYVDXMQ72lcMq9tVsZYaCFM3VzuT4yVSrjOZ",
+      "api_key": "sk-xxx",
       "models": [
         "claude-sonnet-4-20250514",
         "claude-sonnet-4-20250514-thinking",
@@ -23,7 +23,7 @@
     {
       "name": "zuke-gemini",
       "api_base_url": "https://zuke.chat/v1/chat/completions",
-      "api_key": "sk-g7KHmMzv0BKglb9pvPOnAlQKmkMiCi9hjcSFlRTjCSlnP4U0",
+      "api_key": "sk-xxx",
       "models": [
         "gemini-2.5-pro-preview-03-25",
         "gemini-2.5-pro-preview-03-25-thinking",
