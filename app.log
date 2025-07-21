@@ -45,3 +45,82 @@
     at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67852:25)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
 [2025-07-21T15:26:09.005Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "Write", "args": {"file_path": "/home/li/my_new_project/claude-code-router-dev/llms-src/src/transformer/gemini-pro.transformer.ts", "content": "import { log } from \"../utils/log\";\nimport * as JSON5 from 'json5';\nimport { LLMProvide...
+[2025-07-21T16:09:45.587Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66947:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66926:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66711:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66405:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66385:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67896:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67878:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67853:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T16:09:45.587Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "MultiEdit", "args": {"edits": [{"new_string": "import minimist from \"minimist\";\nimport { run } from \"./index\";\nimport { showStatus } from \"./utils/status\";\nimport { executeCodeCommand } from \"./utils/codeCommand\";\nimport {...
+[2025-07-21T16:14:33.011Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66947:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66926:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66711:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66405:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66385:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67896:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67878:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67853:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T16:14:33.011Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"text": "\u7f13\u51b2\u533a\u5904\u7406", "thought": true}], "role": "model"}, "index": 0}], "usageMetadata": {"promptTokenCount": 27600, "totalTokenCount": 29684, "promptTokensDetails": [{"modality": "TEXT", "tokenCount": 27600}], "thoughtsTokenC
+ount": 2084}...
+[2025-07-21T16:18:53.080Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66947:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66926:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66711:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66405:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66385:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67896:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67878:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67853:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T16:18:53.081Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "Write", "args": {"file_path": "/home/li/my_new_project/claude-code-router-dev/src/cli.ts", "content": "#!/usr/bin/env node\nimport minimist from \"minimist\";\nimport { run } from \"./index\";\nimport { showStatus } from \"./utils/sta...
+[2025-07-21T16:20:27.272Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66947:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66926:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66711:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66405:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66385:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67896:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67878:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67853:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T16:20:27.272Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "MultiEdit", "args": {"edits": [{"old_string": "", "new_string": "import { createParser, ParsedEvent, ReconnectInterval } from 'eventsource-parser';"}, {"new_string": "// ... (imports)\n\n// \u79fb\u9664\u65e7\u7684 cleanSchemaProperti...
+[2025-07-21T16:20:29.947Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66947:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66926:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66711:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66405:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66385:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67896:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67878:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67853:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T16:20:29.947Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "MultiEdit", "args": {"edits": [{"new_string": "#!/usr/bin/env node\nimport minimist from 'minimist';\nimport { run } from './index';\nimport { showStatus } from './utils/status';\nimport { executeCodeCommand } from './utils/codeComman...
+[2025-07-21T16:25:16.454Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66947:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66926:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66711:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66405:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66385:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67896:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67878:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67853:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T16:25:16.454Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"text": "he cl", "thought": true}], "role": "model"}, "index": 0}], "usageMetadata": {"promptTokenCount": 2297, "totalTokenCount": 2368, "promptTokensDetails": [{"modality": "TEXT", "tokenCount": 2297}], "thoughtsTokenCount": 71}, "mod
+elVersion": "gemini-2.5-...
+[2025-07-21T16:36:34.375Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67150:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67129:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66914:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66608:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66588:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:68099:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:68081:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:68056:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T16:36:34.375Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "MultiEdit", "args": {"file_path": "/home/li/my_new_project/claude-code-router-dev/llms-src/src/transformer/gemini-pro.transformer.ts", "edits": [{"old_string": "import { Transformer } from \"../types/transformer\";", "new_string": "im...

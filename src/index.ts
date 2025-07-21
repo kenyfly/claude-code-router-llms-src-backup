@@ -37,31 +37,31 @@ interface RunOptions {
 }
 
 async function run(options: RunOptions = {}) {
+  const config = await initConfig();
+  const port = options.port || process.env.CLAUDE_CODE_ROUTER_PORT || config.Port || 3456;
+  
   // Check if service is already running
-  if (isServiceRunning()) {
-    console.log("✅ Service is already running in the background.");
+  if (isServiceRunning(port)) {
+    console.log(`✅ Service is already running on port ${port}.`);
     return;
   }
 
   await initializeClaudeConfig();
   await initDir();
-  const config = await initConfig();
-
-  const port = 3305;
 
   // Save the PID of the background process
-  savePid(process.pid);
+  savePid(process.pid, port);
 
   // Handle SIGINT (Ctrl+C) to clean up PID file
   process.on("SIGINT", () => {
     console.log("Received SIGINT, cleaning up...");
-    cleanupPidFile();
+    cleanupPidFile(port);
     process.exit(0);
   });
 
   // Handle SIGTERM to clean up PID file
   process.on("SIGTERM", () => {
-    cleanupPidFile();
+    cleanupPidFile(port);
     process.exit(0);
   });
 

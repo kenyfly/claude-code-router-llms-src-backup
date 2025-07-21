@@ -1,17 +1,20 @@
 #!/usr/bin/env node
+import minimist from "minimist";
 import { run } from "./index";
 import { showStatus } from "./utils/status";
 import { executeCodeCommand } from "./utils/codeCommand";
-import { cleanupPidFile, isServiceRunning } from "./utils/processCheck";
+import { cleanupPidFile, isServiceRunning, getServicePid } from "./utils/processCheck";
 import { version } from "../package.json";
 import { spawn } from "child_process";
 import { PID_FILE, REFERENCE_COUNT_FILE } from "./constants";
 import { existsSync, readFileSync } from "fs";
+import { readConfigFile } from "./utils/index";
 
-const command = process.argv[2];
+const argv = minimist(process.argv.slice(2));
+const command = argv._[0];
 
 const HELP_TEXT = `
-Usage: ccr [command]
+Usage: ccr [command] [options]
 
 Commands:
   start         Start service 
@@ -21,12 +24,17 @@ Commands:
   -v, version   Show version information
   -h, help      Show help information
 
-Example:
-  ccr start
-  ccr code "Write a Hello World"
+Options:
+  --port <port>  Specify port number (default: from config or 3456)
+
+Examples:
+  ccr start --port 8001
+  ccr code "Write a Hello World" --port 8001
+  ccr stop --port 8001
 `;
 
 async function waitForService(
+  port: number,
   timeout = 10000,
   initialDelay = 1000
 ): Promise<boolean> {
@@ -35,7 +43,7 @@ async function waitForService(
 
   const startTime = Date.now();
   while (Date.now() - startTime < timeout) {
-    if (isServiceRunning()) {
+    if (isServiceRunning(port)) {
       // Wait for an additional short period to ensure service is fully ready
       await new Promise((resolve) => setTimeout(resolve, 500));
       return true;
@@ -45,40 +53,61 @@ async function waitForService(
   return false;
 }
 
+async function getDefaultPort(): Promise<number> {
+  try {
+    const config = await readConfigFile();
+    return process.env.CLAUDE_CODE_ROUTER_PORT ? parseInt(process.env.CLAUDE_CODE_ROUTER_PORT) : (config.Port || 3456);
+  } catch {
+    return 3456;
+  }
+}
+
 async function main() {
+  const port = argv.port || await getDefaultPort();
+  
   switch (command) {
     case "start":
-      run();
+      run({ port });
       break;
     case "stop":
       try {
-        const pid = parseInt(readFileSync(PID_FILE, "utf-8"));
-        process.kill(pid);
-        cleanupPidFile();
-        if (existsSync(REFERENCE_COUNT_FILE)) {
-          try {
-            require("fs").unlinkSync(REFERENCE_COUNT_FILE);
-          } catch (e) {
-            // Ignore cleanup errors
+        const pid = getServicePid(port);
+        if (pid) {
+          process.kill(pid);
+          cleanupPidFile(port);
+          if (existsSync(REFERENCE_COUNT_FILE)) {
+            try {
+              require("fs").unlinkSync(REFERENCE_COUNT_FILE);
+            } catch (e) {
+              // Ignore cleanup errors
+            }
           }
+          console.log(
+            `claude code router service on port ${port} has been successfully stopped.`
+          );
+        } else {
+          console.log(
+            `No service found on port ${port}.`
+          );
         }
-        console.log(
-          "claude code router service has been successfully stopped."
-        );
       } catch (e) {
         console.log(
-          "Failed to stop the service. It may have already been stopped."
+          `Failed to stop the service on port ${port}. It may have already been stopped.`
         );
-        cleanupPidFile();
+        cleanupPidFile(port);
       }
       break;
     case "status":
-      showStatus();
+      showStatus(port);
       break;
     case "code":
-      if (!isServiceRunning()) {
-        console.log("Service not running, starting service...");
-        const startProcess = spawn("ccr", ["start"], {
+      if (!isServiceRunning(port)) {
+        console.log(`Service not running on port ${port}, starting service...`);
+        const startArgs = ["start"];
+        if (argv.port) {
+          startArgs.push("--port", argv.port.toString());
+        }
+        const startProcess = spawn(process.execPath, [__filename, ...startArgs], {
           detached: true,
           stdio: "ignore",
         });
@@ -90,16 +119,16 @@ async function main() {
 
         startProcess.unref();
 
-        if (await waitForService()) {
-          executeCodeCommand(process.argv.slice(3));
+        if (await waitForService(port)) {
+          executeCodeCommand(argv._.slice(1), port);
         } else {
           console.error(
-            "Service startup timeout, please manually run `ccr start` to start the service"
+            `Service startup timeout on port ${port}, please manually run \`ccr start --port ${port}\` to start the service`
           );
           process.exit(1);
         }
       } else {
-        executeCodeCommand(process.argv.slice(3));
+        executeCodeCommand(argv._.slice(1), port);
       }
       break;
     case "-v":
