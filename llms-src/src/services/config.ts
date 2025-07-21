@@ -51,9 +51,9 @@ export class ConfigService {
       this.loadJsonConfig();
     }
 
-    // if (this.options.useEnvironmentVariables) {
-    //   this.loadEnvironmentVariables();
-    // }
+    if (this.options.useEnvironmentVariables) {
+      this.loadEnvironmentVariables();
+    }
 
     if (this.config.LOG_FILE) {
       process.env.LOG_FILE = this.config.LOG_FILE;

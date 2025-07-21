@@ -4,10 +4,13 @@
   "description": "Use Claude Code without an Anthropics account and route it to another LLM provider",
   "bin": {
     "ccr": "./dist/cli.js",
-    "my-ccr": "./dist/cli.js"
+    "my-ccr": "./dist/cli.js",
+    "my-ccr-dev": "./dist/cli-dev.js"
   },
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm"
+    "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm",
+    "build:dev": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli-dev.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm",
+    "dev": "PORT=3001 LOG_FILE=dev.log my-ccr-dev"
   },
   "keywords": [
     "claude",
