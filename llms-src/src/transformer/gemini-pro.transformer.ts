@@ -609,14 +609,14 @@ export class GeminiProTransformer implements Transformer {
           }
 
           blockCounter++;
-          log.info(`➡️ [GEMINI_BLOCK_START] 开始处理第 ${blockCounter} 个数据块`, `内容预览: ${jsonStr.substring(0, 80)}...`);
+          // log.info(`➡️ [GEMINI_BLOCK_START] 开始处理第 ${blockCounter} 个数据块`, `内容预览: ${jsonStr.substring(0, 80)}...`);
 
           let chunk: any;
           try {
             chunk = JSON5.parse(jsonStr);
             if (chunk.usageMetadata) {
               usageMetadata = chunk.usageMetadata;
-              log.info('📊 [GEMINI_USAGE_METADATA] 收到用量元数据:', JSON.stringify(usageMetadata));
+              // log.info('📊 [GEMINI_USAGE_METADATA] 收到用量元数据:', JSON.stringify(usageMetadata));
             }
           } catch (parseError: any) {
             log.error('❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败:', parseError);
@@ -651,9 +651,9 @@ export class GeminiProTransformer implements Transformer {
           }
 
           const parts = chunk.candidates?.[0]?.content?.parts || [];
-          if (parts.length > 0) {
-             log.info(`📑 [GEMINI_PARTS_RECEIVED] 第 ${blockCounter} 块包含 ${parts.length} 个 part`);
-          }
+          // if (parts.length > 0) {
+          //    log.info(`📑 [GEMINI_PARTS_RECEIVED] 第 ${blockCounter} 块包含 ${parts.length} 个 part`);
+          // }
 
           // **核心逻辑：遍历 parts 并为每个 part 单独创建和发送消息**
           for (let i = 0; i < parts.length; i++) {
@@ -673,7 +673,7 @@ export class GeminiProTransformer implements Transformer {
                 model: chunk.modelVersion || "gemini-pro",
                 object: "chat.completion.chunk",
               };
-              log.info(`    [GEMINI_THOUGHT_SEND] ${partIdentifier}: 正在向下游发送 "thinking_delta"`);
+              // log.info(`    [GEMINI_THOUGHT_SEND] ${partIdentifier}: 正在向下游发送 "thinking_delta"`);
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(thinkingChunk)}\n\n`));
               continue; // 处理完这个 part，继续下一个
             }
@@ -693,7 +693,7 @@ export class GeminiProTransformer implements Transformer {
                 model: chunk.modelVersion || "gemini-pro",
                 object: "chat.completion.chunk",
               };
-              log.info(`    [GEMINI_TEXT_SEND] ${partIdentifier}: 正在向下游发送 "text_delta"`);
+              // log.info(`    [GEMINI_TEXT_SEND] ${partIdentifier}: 正在向下游发送 "text_delta"`);
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(textChunk)}\n\n`));
             }
 
@@ -735,7 +735,7 @@ export class GeminiProTransformer implements Transformer {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify(toolCallChunk)}\n\n`));
             }
           }
-           log.info(`⬅️ [GEMINI_BLOCK_END] 第 ${blockCounter} 个数据块处理完毕`);
+          //  log.info(`⬅️ [GEMINI_BLOCK_END] 第 ${blockCounter} 个数据块处理完毕`);
         }
       },
     });

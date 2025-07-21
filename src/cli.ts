@@ -10,7 +10,9 @@ import { PID_FILE, REFERENCE_COUNT_FILE } from "./constants";
 import { existsSync, readFileSync } from "fs";
 import { readConfigFile } from "./utils/index";
 
-const argv = minimist(process.argv.slice(2));
+const argv = minimist(process.argv.slice(2), {
+  alias: { p: 'port' }
+});
 const command = argv._[0];
 
 const HELP_TEXT = `
@@ -25,7 +27,7 @@ Commands:
   -h, help      Show help information
 
 Options:
-  --port <port>  Specify port number (default: from config or 3456)
+  --port, -p <port>  Specify port number (default: from config or 3456)
 
 Examples:
   ccr start --port 8001
