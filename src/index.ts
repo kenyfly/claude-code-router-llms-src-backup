@@ -47,7 +47,7 @@ async function run(options: RunOptions = {}) {
   await initDir();
   const config = await initConfig();
 
-  const port = options.port || 3456;
+  const port = 3305;
 
   // Save the PID of the background process
   savePid(process.pid);
@@ -65,16 +65,11 @@ async function run(options: RunOptions = {}) {
     process.exit(0);
   });
 
-  // Use port from environment variable if set (for background process)
-  const servicePort = process.env.SERVICE_PORT
-    ? parseInt(process.env.SERVICE_PORT)
-    : port;
   const server = createServer({
     jsonPath: CONFIG_FILE,
     initialConfig: {
-      // ...config,
       providers: config.Providers || config.providers,
-      PORT: servicePort,
+      PORT: port,
       LOG_FILE: join(
         homedir(),
         ".claude-code-router",

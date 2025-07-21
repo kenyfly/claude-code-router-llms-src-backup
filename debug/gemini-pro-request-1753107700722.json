@@ -1,0 +1,32 @@
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with two fields: 'isNewTopic' (boolean) and 'title' (string, or null if isNewTopic is false). Only include these fields, no other text.",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "日志里面这么多块的内容打印，太刷屏了，可不可以合并到一起呢？\n[2025-07-21T14:12:42.469Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第392块内容: \"I hav\"\n[2025-07-21T14:12:42.487Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第393块内容: \"e rem\"\n[2025-07-21T14:12:42.504Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第394块内容: \"oved \"\n[2025-07-21T14:12:42.524Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第395块内容: \"the d\"\n[2025-07-21T14:12:42.539Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第396块内容: \"ebugg\"\n[2025-07-21T14:12:42.556Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第397块内容: \"ing c\"\n[2025-07-21T14:12:42.572Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第398块内容: \"ode t\"\n[2025-07-21T14:12:42.590Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第399块内容: \"hat w\"\n[2025-07-21T14:12:42.607Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第400块内容: \"as sa\"\n[2025-07-21T14:12:42.622Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第401块内容: \"ving \"\n[2025-07-21T14:12:42.639Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第402块内容: \"data \"\n[2025-07-21T14:12:42.655Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第403块内容: \"to lo\"\n[2025-07-21T14:12:42.673Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第404块内容: \"cal f\"\n[2025-07-21T14:12:42.690Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第405块内容: \"iles.\"\n[2025-07-21T14:12:42.717Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第406块内容: \" The\"\n[2025-07-21T14:12:42.725Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第407块内容: \" chan\"\n[2025-07-21T14:12:42.742Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第408块内容: \"ges h\"\n[2025-07-21T14:12:42.758Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第409块内容: \"ave b\"\n[2025-07-21T14:12:42.775Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第410块内容: \"een a\"\n[2025-07-21T14:12:42.793Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第411块内容: \"pplie\"\n[2025-07-21T14:12:42.809Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第412块内容: \"d to \"\n[2025-07-21T14:12:42.824Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第413块内容: \"`llms\"\n[2025-07-21T14:12:42.840Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第414块内容: \"-src/\"\n[2025-07-21T14:12:42.858Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第415块内容: \"src/t\"\n[2025-07-21T14:12:42.876Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第416块内容: \"ransf\"\n[2025-07-21T14:12:42.894Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第417块内容: \"ormer\"\n[2025-07-21T14:12:42.911Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第418块内容: \"/gemi\"\n[2025-07-21T14:12:42.927Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第419块内容: \"ni-pr\"\n[2025-07-21T14:12:42.944Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第420块内容: \"o.tra\"\n[2025-07-21T14:12:42.962Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第421块内容: \"nsfor\"\n[2025-07-21T14:12:42.978Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第422块内容: \"mer.t\"\n[2025-07-21T14:12:42.995Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第423块内容: \"s`.\"",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    }
+  ],
+  "model": "gemini-2.5-flash-lite-preview-06-17",
+  "max_tokens": 512,
+  "temperature": 0,
+  "stream": true
+}

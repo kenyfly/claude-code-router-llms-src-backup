@@ -7,7 +7,7 @@ export const CONFIG_FILE = `${HOME_DIR}/config.json`;
 
 export const PLUGINS_DIR = `${HOME_DIR}/plugins`;
 
-export const PID_FILE = path.join(HOME_DIR, '.claude-code-router.pid');
+export const PID_FILE = path.join(HOME_DIR, process.env.NODE_ENV === 'development' ? '.claude-code-router-dev.pid' : '.claude-code-router.pid');
 
 export const REFERENCE_COUNT_FILE = '/tmp/claude-code-reference-count.txt';
 

@@ -1,0 +1,32 @@
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with two fields: 'isNewTopic' (boolean) and 'title' (string, or null if isNewTopic is false). Only include these fields, no other text.",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "@llms-src/src/transformer/gemini-pro.transformer.ts \n请问这个bug是什么原因呢？\n       832              }\n       833    \n       834              if (tool_calls.length > 0) {\n\n● I have made the requested changes. Now, the log messages will be consolidated and displayed as\n  a single entry at the end of the stream.\n\n● Read(llms-src/src/transformer/gemini-pro.transformer.ts)\n  ⎿  Error: Interrupted by user\n  ⎿  Interrupted by user\n\n日志如下：\n[2025-07-21T14:22:52.205Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第57块内容: \"r\"\n[2025-07-21T14:22:52.223Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第58块内容: \"e\"\n[2025-07-21T14:22:52.315Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第59块内容: \"a\"\n[2025-07-21T14:22:52.315Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第60块内容: \"m\"\n[2025-07-21T14:22:52.316Z] [v1.0.15] [INFO] 📝 [GEMINI_CONTENT] 第61块内容: \".\"\n[2025-07-21T14:22:52.316Z] [v1.0.15] [INFO] 🏁 [GEMINI_STREAM_END] 流真正结束，发送最终块\n[2025-07-21T14:22:52.316Z] [v1.0.15] [INFO] 🏁 [GEMINI_FINAL_CHUNK] 最终块内容: data: {\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":null},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"created\":1753107772,\"id\":\"final\",\"model\":\"gemini-pro\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_a49d71b8a1\",\"usage\":{\"completion_tokens\":28,\"prompt_tokens\":42428,\"total_tokens\":42456}}\n\n\n[2025-07-21T14:22:52.316Z] [v1.0.15] [INFO] 🏁 [STREAM_END] 总块数: 63, 内容块: 61, 工具块: 0, 模型: gemini-pro\n[2025-07-21T14:22:52.316Z] [v1.0.15] [INFO] content_block_stop hasTextContentStarted\n[2025-07-21T14:22:52.316Z] [v1.0.15] [INFO] 🎯 [FINAL_RESPONSE] Conversion complete, final Anthropic response: {\n  \"type\": \"message\",\n  \"role\": \"assistant\",\n  \"content\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"\"\n    }\n  ],\n  \"stop_reason\": \"end_turn\",\n  \"stop_sequence\": null,\n  \"usage\": {\n    \"input_tokens\": 42428,\n    \"output_tokens\": 28\n  }\n}\n[2025-07-21T14:23:19.641Z] [v1.0.15] [INFO] 🔍 [GEMINI_RAW_RESPONSE] 服务器原始响应: {\"candidates\":[{\"content\":{\"role\":\"model\",\"parts\":[{\"functionCall\":{\"name\":\"Read\",\"args\":{\"file_path\":\"/home/li/my_new_project/claude-code-router-dev/llms-src/src/transformer/gemini-pro.transformer.ts\"}}}]},\"finishReason\":\"STOP\",\"index\":0,\"safetyRatings\":null}],\"promptFeedback\":{\"safetyRatings\":null},\"usageMetadata\":{\"promptTokenCount\":28420,\"candidatesTokenCount\":80,\"totalTokenCount\":30126,\"thoughtsTokenCount\":1626,\"promptTokensDetails\":[{\"modality\":\"TEXT\",\"tokenCount\":28420}]}}\n[2025-07-21T14:23:19.642Z] [v1.0.15] [INFO] 📡 [RESPONSE_TYPE] 响应类型: 非流式\n[2025-07-21T14:23:19.642Z] [v1.0.15] [INFO] 📡 [RESPONSE_HEADERS] 响应头: Content-Type=application/json\n[2025-07-21T14:23:19.642Z] [v1.0.15] [INFO] 🎯 [FINAL_RESPONSE] Conversion complete, final Anthropic response: {\n  \"id\": \"chatcmpl-1753107799642\",\n  \"type\": \"message\",\n  \"role\": \"assistant\",\n  \"model\": \"gemini-pro\",\n  \"content\": [\n    {\n      \"type\": \"tool_use\",\n      \"id\": \"tool_2f6xyilsl2m\",\n      \"name\": \"Read\",\n      \"input\": {\n        \"file_path\": \"/home/li/my_new_project/claude-code-router-dev/llms-src/src/transformer/gemini-pro.transformer.ts\"\n      }\n    }\n  ],\n  \"stop_reason\": \"end_turn\",\n  \"stop_sequence\": null,\n  \"usage\": {\n    \"input_tokens\": 28420,\n    \"output_tokens\": 80\n  }\n}",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    }
+  ],
+  "model": "gemini-2.5-flash-lite-preview-06-17",
+  "max_tokens": 512,
+  "temperature": 0,
+  "stream": true
+}

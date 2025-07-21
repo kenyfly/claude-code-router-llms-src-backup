@@ -10,7 +10,7 @@ export async function executeCodeCommand(args: string[] = []) {
   const env = {
     ...process.env,
     ANTHROPIC_AUTH_TOKEN: "test",
-    ANTHROPIC_BASE_URL: `http://127.0.0.1:3456`,
+    ANTHROPIC_BASE_URL: `http://127.0.0.1:3305`,
     API_TIMEOUT_MS: "600000",
   };
 

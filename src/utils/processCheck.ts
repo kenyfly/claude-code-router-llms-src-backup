@@ -78,7 +78,7 @@ export function getServiceInfo() {
         running,
         pid,
         port: 3456,
-        endpoint: 'http://127.0.0.1:3456',
+        endpoint: 'http://127.0.0.1:3305',
         pidFile: PID_FILE,
         referenceCount: getReferenceCount()
     };

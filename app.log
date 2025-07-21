@@ -1,0 +1,47 @@
+[2025-07-21T13:13:17.631Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: Bad control character in string literal in JSON at position 4084 (line 1 column 4085)
+    at JSON.parse (<anonymous>)
+    at S (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67159:20)
+    at u (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67141:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67116:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T13:13:17.631Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "Edit", "args": {"new_string": "const isBackground = request.messages.some(msg => {\n      if (typeof msg.content === 'string') return false;\n      if (Array.isArray(msg.content)) {\n        return msg.content.some(c => c.type === 'te...
+[2025-07-21T15:08:17.781Z] [v1.0.15] [ERROR] ❌ [GEMINI_STREAM_ERROR] 流处理错误: ReferenceError: logTimer is not defined
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67842:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:09:45.829Z] [v1.0.15] [ERROR] ❌ [GEMINI_STREAM_ERROR] 流处理错误: ReferenceError: logTimer is not defined
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67842:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:11:00.615Z] [v1.0.15] [ERROR] ❌ [GEMINI_STREAM_ERROR] 流处理错误: ReferenceError: logTimer is not defined
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67842:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:13:19.484Z] [v1.0.15] [ERROR] ❌ [GEMINI_STREAM_ERROR] 流处理错误: ReferenceError: logTimer is not defined
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67842:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:13:51.900Z] [v1.0.15] [ERROR] ❌ [GEMINI_STREAM_ERROR] 流处理错误: ReferenceError: logTimer is not defined
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67842:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:15:10.584Z] [v1.0.15] [ERROR] ❌ [GEMINI_STREAM_ERROR] 流处理错误: ReferenceError: logTimer is not defined
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67842:14)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:23:21.930Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66946:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66925:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66710:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66404:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66384:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67895:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67877:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67852:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:23:21.930Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "Write", "args": {"content": "import { log } from \"../utils/log\";\nimport * as JSON5 from 'json5';\nimport { LLMProvider, UnifiedChatRequest, UnifiedMessage, UnifiedTool } from \"../types/llm\";\nimport { Transformer } from \"../type...
+[2025-07-21T15:26:09.004Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_PARSE_ERROR] JSON解析失败: SyntaxError: JSON5: invalid character '\n' at 2:0
+    at xe (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66946:13)
+    at M (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66925:12)
+    at Object.string (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66710:15)
+    at $t (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66404:21)
+    at ft.exports (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:66384:11)
+    at p (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67895:18)
+    at h (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67877:104)
+    at Object.start (/home/li/my_new_project/claude-code-router-dev/dist/cli.js:67852:25)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+[2025-07-21T15:26:09.005Z] [v1.0.15] [ERROR] ❌ [GEMINI_JSON_CONTENT] 内容: {"candidates": [{"content": {"parts": [{"functionCall": {"name": "Write", "args": {"file_path": "/home/li/my_new_project/claude-code-router-dev/llms-src/src/transformer/gemini-pro.transformer.ts", "content": "import { log } from \"../utils/log\";\nimport * as JSON5 from 'json5';\nimport { LLMProvide...

@@ -1,8 +1,7 @@
 import { log } from "../utils/log";
+import * as JSON5 from 'json5';
 import { LLMProvider, UnifiedChatRequest, UnifiedMessage, UnifiedTool } from "../types/llm";
 import { Transformer } from "../types/transformer";
-import * as fs from 'fs';
-import * as path from 'path';
 
 // vvvvvvvvvvvv NEW HELPER FUNCTION vvvvvvvvvvvv
 /**
@@ -95,20 +94,6 @@ export class GeminiProTransformer implements Transformer {
     request: UnifiedChatRequest,
     provider: LLMProvider
   ): Record<string, any> {
-    // --- Start of debug code ---
-    try {
-      const debugDir = path.join(process.cwd(), 'debug');
-      if (!fs.existsSync(debugDir)) {
-        fs.mkdirSync(debugDir, { recursive: true });
-      }
-      const filePath = path.join(debugDir, `gemini-pro-request-${Date.now()}.json`);
-      fs.writeFileSync(filePath, JSON.stringify(request, null, 2));
-      log.info(`[GEMINI_DEBUG] Saved incoming request to ${filePath}`);
-    } catch (e) {
-      log.error('[GEMINI_DEBUG] Failed to save request file', e);
-    }
-    // --- End of debug code ---
-
     return {
       body: {
         contents: request.messages.map((message: UnifiedMessage) => {
@@ -142,7 +127,7 @@ export class GeminiProTransformer implements Transformer {
                   let args = {};
                   try {
                     if (typeof toolCall.function.arguments === "string") {
-                      args = JSON.parse(toolCall.function.arguments || "{}");
+                      args = JSON5.parse(toolCall.function.arguments || "{}");
                     } else if (typeof toolCall.function.arguments === "object") {
                       args = toolCall.function.arguments || {};
                     }
@@ -186,7 +171,7 @@ export class GeminiProTransformer implements Transformer {
               let toolResponseContent;
               try {
                 toolResponseContent = typeof message.content === 'string'
-                  ? JSON.parse(message.content)
+                  ? JSON5.parse(message.content)
                   : message.content;
               } catch (e) {
                 toolResponseContent = { result: message.content };
@@ -382,7 +367,7 @@ export class GeminiProTransformer implements Transformer {
     const rawResponseText = await responseClone.text();
     log.info('🔍 [GEMINI_RAW_RESPONSE] 服务器原始响应:', rawResponseText);
     
-    const jsonResponse: any = JSON.parse(rawResponseText);
+    const jsonResponse: any = JSON5.parse(rawResponseText);
     
     // 检查是否有错误信息
     if (jsonResponse.error) {
@@ -512,6 +497,7 @@ export class GeminiProTransformer implements Transformer {
         let hasInjectedThinking = false;
         let hasProducedContent = false; // <-- 添加内容追踪标志
         let blockCounter = 0; // 🔍 添加数据块计数器
+        let accumulatedLogContent = ""; // 用于打字机效果的内容累积
 
         // SSE 解析状态机
         let state = 'WAITING_DATA'; // WAITING_DATA, IN_DATA, WAITING_END
@@ -527,7 +513,6 @@ export class GeminiProTransformer implements Transformer {
                 log.warn('⚠️ [GEMINI_STREAM_WARN] 流结束时缓冲区中仍有未处理数据:', buffer.substring(0, 200) + '...');
                 await processBuffer(buffer, true); // 强制处理
               }
-              
               // <-- 在这里注入空内容块
               if (!hasProducedContent) {
                 log.info('🟡 [GEMINI_EMPTY_STREAM] 为保证消息合法，注入一个空内容块');
@@ -544,7 +529,11 @@ export class GeminiProTransformer implements Transformer {
                 };
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify(emptyContentChunk)}\n\n`));
               }
-              
+              // 打字机效果：流结束后输出换行
+              if (accumulatedLogContent) {
+                process.stdout.write('\n');
+                log.info('📝 [GEMINI_FINAL_CONTENT]', `"${accumulatedLogContent}"`);
+              }
               // 发送最终的结束块
               log.info('🏁 [GEMINI_STREAM_END] 流真正结束，发送最终块');
               const finalRes: any = {
@@ -565,7 +554,6 @@ export class GeminiProTransformer implements Transformer {
                 object: "chat.completion.chunk",
                 system_fingerprint: "fp_a49d71b8a1",
               };
-              
               if (usageMetadata) {
                 finalRes.usage = {
                   completion_tokens: usageMetadata.candidatesTokenCount || 0,
@@ -573,10 +561,8 @@ export class GeminiProTransformer implements Transformer {
                   total_tokens: usageMetadata.totalTokenCount || 0,
                 };
               }
-              
               const finalChunk = `data: ${JSON.stringify(finalRes)}\n\n`;
               log.info('🏁 [GEMINI_FINAL_CHUNK] 最终块内容:', finalChunk);
-              
               controller.enqueue(encoder.encode(finalChunk));
               break;
             }
@@ -708,7 +694,7 @@ export class GeminiProTransformer implements Transformer {
           
           let chunk: any;
           try {
-            chunk = JSON.parse(jsonStr);
+            chunk = JSON5.parse(jsonStr);
             
                       // 🔍 只记录包含思考token的数据块
           // if (chunk.usageMetadata && chunk.usageMetadata.thoughtsTokenCount > 0) {
@@ -744,7 +730,7 @@ export class GeminiProTransformer implements Transformer {
               system_fingerprint: "fp_a49d71b8a1",
             };
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(thinkingRes)}\n\n`));
-            log.info('✨ [THINKING_EVENT] 注入 "思考中" 事件');
+            // log.info('✨ [THINKING_EVENT] 注入 "思考中" 事件');
           }
 
           // 检查是否有 MALFORMED_FUNCTION_CALL 错误
@@ -841,7 +827,7 @@ export class GeminiProTransformer implements Transformer {
             }
           }
 
-          // 🔍 只记录非空内容
+          // 只记录非空内容，每块输出一行日志
           if (content && content.trim()) {
             log.info('📝 [GEMINI_CONTENT] 第' + blockCounter + '块内容:', '"' + content + '"');
           }

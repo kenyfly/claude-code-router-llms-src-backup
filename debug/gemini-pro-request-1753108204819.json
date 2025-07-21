@@ -1,0 +1,32 @@
+{
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "type": "text",
+          "text": "Analyze if this message indicates a new conversation topic. If it does, extract a 2-3 word title that captures the new topic. Format your response as a JSON object with two fields: 'isNewTopic' (boolean) and 'title' (string, or null if isNewTopic is false). Only include these fields, no other text.",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "还有这里，背景模型貌似没有起作用是为什么？\n2025-07-21T14:26:21.790Z] [v1.0.15] [INFO] �� [MODEL_ROUTING] Anthropic Request - Model: gemini-2.5-flash-lite-preview-06-17, Messages: 1\n[2025-07-21T14:26:21.791Z] [v1.0.15] [INFO] ✅ [BACKGROUND_MODEL] 检测到背景模型: gemini-2.5-flash-lite-preview-06-17\n[2025-07-21T14:26:21.792Z] [v1.0.15] [INFO] [GEMINI_DEBUG] Saved incoming request to /home/li/my_new_project/claude-code-router-dev/debug/gemini-pro-request-1753107981791.json\n[2025-07-21T14:26:21.839Z] [v1.0.15] [INFO] 🚀 [MODEL_ROUTING] Anthropic Request - Model: gemini-2.5-pro, Messages: 1\n[2025-07-21T14:26:21.839Z] [v1.0.15] [INFO] 🟡 [OTHER_MODEL] 其他模型: gemini-2.5-pro\n[2025-07-21T14:26:21.840Z] [v1.0.15] [INFO] [GEMINI_DEBUG] Saved incoming request to /home/li/my_new_project/claude-code-router-dev/debug/gemini-pro-request-1753107981840.json\n[2025-07-21T14:26:24.681Z] [v1.0.15] [INFO] 📡 [RESPONSE_TYPE] 响应类型: 流式\n[2025-07-21T14:26:24.681Z] [v1.0.15] [INFO] 📡 [RESPONSE_HEADERS] 响应头: Content-Type=text/event-stream\n[2025-07-21T14:26:24.681Z] [v1.0.15] [INFO] ✨ [THINKING_EVENT] 注入 \"思考中\" 事件\n[2025-07-21T14:26:24.682Z] [v1.0.15] [INFO] �� [FIRST_CHUNK] 模型: gemini-2.5-flash-lite-preview-06-17, ID: D05-aMf9Mo_qkdUP-MKi8A4\n[2025-07-21T14:26:24.682Z] [v1.0.15] [INFO] 🎯 [BACKGROUND_STREAM_START] 背景模型流式响应开始\n[2025-07-21T14:26:27.760Z] [v1.0.15] [INFO] 📡 [RESPONSE_TYPE] 响应类型: 流式\n[2025-07-21T14:26:27.760Z] [v1.0.15] [INFO] 📡 [RESPONSE_HEADERS] 响应头: Content-Type=text/event-stream\n[2025-07-21T14:26:27.760Z] [v1.0.15] [INFO] ✨ [THINKING_EVENT] 注入 \"思考中\" 事件\n[2025-07-21T14:26:27.760Z] [v1.0.15] [INFO] 📊 [FIRST_CHUNK] 模型: gemini-2.5-pro, ID: Ek5-aIjTFcqpkdUPyOi04Aw\n[2025-07-21T14:26:29.249Z] [v1.0.15] [INFO] 🟡 [GEMINI_EMPTY_STREAM] 为保证消息合法，注入一个空内容块\n[2025-07-21T14:26:29.249Z] [v1.0.15] [INFO] 🏁 [GEMINI_STREAM_END] 流真正结束，发送最终块\n[2025-07-21T14:26:29.249Z] [v1.0.15] [INFO] 🏁 [GEMINI_FINAL_CHUNK] 最终块内容: data: {\"choices\":[{\"delta\":{\"role\":\"assistant\",\"content\":null},\"finish_reason\":\"stop\",\"index\":0,\"logprobs\":null}],\"created\":1753107989,\"id\":\"final\",\"model\":\"gemini-pro\",\"object\":\"chat.completion.chunk\",\"system_fingerprint\":\"fp_a49d71b8a1\",\"usage\":{\"completion_tokens\":0,\"prompt_tokens\":1562,\"total_tokens\":2073}}\n@llms-src/src/transformer/anthropic.transformer.ts ",
+          "cache_control": {
+            "type": "ephemeral"
+          }
+        }
+      ]
+    }
+  ],
+  "model": "gemini-2.5-flash-lite-preview-06-17",
+  "max_tokens": 512,
+  "temperature": 0,
+  "stream": true
+}

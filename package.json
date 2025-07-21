@@ -9,8 +9,9 @@
   },
   "scripts": {
     "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm",
-    "build:dev": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli-dev.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm",
-    "dev": "PORT=3001 LOG_FILE=dev.log my-ccr-dev"
+    "start": "PORT=3305 node dist/cli.js",
+    "build:dev": "esbuild src/cli-dev.ts --bundle --platform=node --outfile=dist/cli-dev.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm",
+    "start:dev": "PORT=3305 node dist/cli-dev.js"
   },
   "keywords": [
     "claude",
@@ -29,6 +30,7 @@
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/node": "^24.0.15",
     "esbuild": "^0.25.1",
     "typescript": "^5.8.2"
   },
