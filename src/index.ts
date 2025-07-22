@@ -37,44 +37,39 @@ interface RunOptions {
 }
 
 async function run(options: RunOptions = {}) {
+  const config = await initConfig();
+  const port = options.port || process.env.CLAUDE_CODE_ROUTER_PORT || config.Port || 3456;
+  
   // Check if service is already running
-  if (isServiceRunning()) {
-    console.log("✅ Service is already running in the background.");
+  if (isServiceRunning(port)) {
+    console.log(`✅ Service is already running on port ${port}.`);
     return;
   }
 
   await initializeClaudeConfig();
   await initDir();
-  const config = await initConfig();
-
-  const port = options.port || 3456;
 
   // Save the PID of the background process
-  savePid(process.pid);
+  savePid(process.pid, port);
 
   // Handle SIGINT (Ctrl+C) to clean up PID file
   process.on("SIGINT", () => {
     console.log("Received SIGINT, cleaning up...");
-    cleanupPidFile();
+    cleanupPidFile(port);
     process.exit(0);
   });
 
   // Handle SIGTERM to clean up PID file
   process.on("SIGTERM", () => {
-    cleanupPidFile();
+    cleanupPidFile(port);
     process.exit(0);
   });
 
-  // Use port from environment variable if set (for background process)
-  const servicePort = process.env.SERVICE_PORT
-    ? parseInt(process.env.SERVICE_PORT)
-    : port;
   const server = createServer({
     jsonPath: CONFIG_FILE,
     initialConfig: {
-      // ...config,
       providers: config.Providers || config.providers,
-      PORT: servicePort,
+      PORT: port,
       LOG_FILE: join(
         homedir(),
         ".claude-code-router",

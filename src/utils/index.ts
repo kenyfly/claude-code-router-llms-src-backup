@@ -50,8 +50,10 @@ export const readConfigFile = async () => {
     const name = await question("Enter Provider Name: ");
     const apiKey = await question("Enter Provider API KEY: ");
     const baseUrl = await question("Enter Provider URL: ");
-    const model = await question("Enter MODEL Name: ");
+        const model = await question("Enter MODEL Name: ");
+    const port = await question("Enter Port (default: 3456): ") || '3456';
     const config = Object.assign({}, DEFAULT_CONFIG, {
+      Port: parseInt(port, 10),
       Providers: [
         {
           name,

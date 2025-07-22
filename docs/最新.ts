@@ -603,7 +603,7 @@ export class AnthropicTransformer implements Transformer {
                     (hasTextContentStarted || toolCallChunks > 0) &&
                     !isClosed
                   ) {
-                    log("content_block_stop hasTextContentStarted");
+                    // log("content_block_stop hasTextContentStarted");
                     const contentBlockStop = {
                       type: "content_block_stop",
                       index: contentIndex,

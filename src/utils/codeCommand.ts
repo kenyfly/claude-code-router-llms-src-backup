@@ -4,13 +4,14 @@ import {
   decrementReferenceCount,
 } from "./processCheck";
 import { closeService } from "./close";
+import { readConfigFile } from "./index";
 
-export async function executeCodeCommand(args: string[] = []) {
-  // Set environment variables
+export async function executeCodeCommand(args: string[] = [], port: number) {
+    // Set environment variables
   const env = {
     ...process.env,
     ANTHROPIC_AUTH_TOKEN: "test",
-    ANTHROPIC_BASE_URL: `http://127.0.0.1:3456`,
+    ANTHROPIC_BASE_URL: `http://127.0.0.1:${port}`,
     API_TIMEOUT_MS: "600000",
   };
 

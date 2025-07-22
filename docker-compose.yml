@@ -4,7 +4,7 @@ services:
   claude-code-reverse:
     build: .
     ports:
-      - "3456:3456"
+      - "3305:3305"
     environment:
       - ENABLE_ROUTER=${ENABLE_ROUTER}
       - OPENAI_API_KEY=${OPENAI_API_KEY}

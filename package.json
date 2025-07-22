@@ -4,10 +4,14 @@
   "description": "Use Claude Code without an Anthropics account and route it to another LLM provider",
   "bin": {
     "ccr": "./dist/cli.js",
-    "my-ccr": "./dist/cli.js"
+    "my-ccr": "./dist/cli.js",
+    "my-ccr-dev": "./dist/cli-dev.js"
   },
   "scripts": {
-    "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm"
+    "build": "esbuild src/cli.ts --bundle --platform=node --outfile=dist/cli.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm",
+    "start": "PORT=3305 node dist/cli.js",
+    "build:dev": "esbuild src/cli-dev.ts --bundle --platform=node --outfile=dist/cli-dev.js && cp node_modules/tiktoken/tiktoken_bg.wasm dist/tiktoken_bg.wasm",
+    "start:dev": "PORT=3305 node dist/cli-dev.js"
   },
   "keywords": [
     "claude",
@@ -22,10 +26,14 @@
     "@musistudio/llms": "file:./llms-src",
     "axios": "^1.10.0",
     "dotenv": "^16.4.7",
+    "eventsource-parser": "^3.0.3",
+    "minimist": "^1.2.8",
     "tiktoken": "^1.0.21",
     "uuid": "^11.1.0"
   },
   "devDependencies": {
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^24.0.15",
     "esbuild": "^0.25.1",
     "typescript": "^5.8.2"
   },
