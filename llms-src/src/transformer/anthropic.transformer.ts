@@ -227,6 +227,7 @@ export class AnthropicTransformer implements Transformer {
         let isThinkingStarted = false;
         let contentIndex = 0;
 
+        let accumulatedText = "";
         const safeEnqueue = (data: Uint8Array) => {
           if (!isClosed) {
             try {
@@ -454,6 +455,7 @@ export class AnthropicTransformer implements Transformer {
                   }
 
                   if (!isClosed && !hasFinished) {
+                    accumulatedText += choice.delta.content; // 累积文本内容
                     const anthropicChunk = {
                       type: "content_block_delta",
                       index: contentIndex,
@@ -734,7 +736,7 @@ export class AnthropicTransformer implements Transformer {
                   if (contentChunks > 0) {
                     finalResponse.content.push({
                       type: "text",
-                      text: choice.delta?.content || ""
+                      text: accumulatedText // 使用累积的文本
                     });
                   }
 
