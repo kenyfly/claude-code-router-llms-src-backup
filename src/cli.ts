@@ -65,7 +65,10 @@ async function getDefaultPort(): Promise<number> {
 }
 
 async function main() {
+  console.log("CLI ARGV:", process.argv.slice(2));
+  console.log("PARSED ARGV:", argv);
   const port = argv.port || await getDefaultPort();
+  console.log("USING PORT:", port);
   
   switch (command) {
     case "start":
